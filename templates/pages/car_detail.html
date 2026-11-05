@@ -1,0 +1,670 @@
+{% extends "base.html" %}
+{% load static currency_tags %}
+
+{% block title %}{{ car.brand.name }} {{ car.title }} | CarVistaHub Showroom{% endblock %}
+
+{% block content %}
+<!-- =========================================================================
+     1. BREADCRUMBS & TOP HEADER
+     ========================================================================= -->
+<section class="luxury-hero-bg py-4 border-bottom">
+    <div class="autohub-container">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'cars:home' %}" class="text-primary fw-semibold">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'cars:car_list' %}" class="text-primary fw-semibold">Explore New Cars</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'cars:car_list' %}?brand={{ car.brand.slug }}" class="text-primary fw-semibold">{{ car.brand.name }}</a></li>
+                <li class="breadcrumb-item active text-secondary" aria-current="page">{{ car.title }}</li>
+            </ol>
+        </nav>
+
+        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+            <div>
+                <!-- Brand and Category Badges -->
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <span class="badge bg-primary text-white text-uppercase px-3 py-1 rounded-pill fs-8 fw-bold">
+                        {{ car.brand.name }}
+                    </span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill fs-8 fw-semibold">
+                        {{ car.get_body_type_display }}
+                    </span>
+                    {% if car.is_featured %}
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1 rounded-pill fs-8 fw-bold">
+                            ★ Featured Vehicle
+                        </span>
+                    {% endif %}
+                    {% if car.is_available %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill fs-8 fw-semibold d-inline-flex align-items-center gap-1">
+                            <span class="material-symbols-outlined fs-7">check_circle</span>
+                            In Stock ({{ car.stock_quantity }} Unit{{ car.stock_quantity|pluralize }} Available)
+                        </span>
+                    {% else %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1 rounded-pill fs-8 fw-semibold">
+                            Currently Reserved / Sold Out
+                        </span>
+                    {% endif %}
+                </div>
+
+                <h1 class="hero-title fs-2 mb-1">{{ car.brand.name }} {{ car.title }}</h1>
+                <p class="text-muted fs-7 mb-0">
+                    Official Showroom Model • Verified Dealership Inventory • {{ car.color_options }}
+                </p>
+            </div>
+
+            <!-- Header Price Display -->
+            <div class="text-lg-end">
+                <div class="fs-7 text-muted text-uppercase fw-semibold tracking-wide">Ex-Showroom Price</div>
+                <div class="display-6 fw-bold text-primary mb-1">
+                    ₹{{ car.price|indian_currency }}
+                </div>
+                <div class="badge bg-light text-dark border px-3 py-1 fs-8">
+                    Advance Booking: <strong>₹{{ car.booking_amount|indian_currency }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================================
+     2. MAIN SHOWROOM CONTENT (GALLERY + SPECIFICATIONS + SIDEBAR)
+     ========================================================================= -->
+<section class="autohub-section py-5">
+    <div class="autohub-container">
+        <div class="row g-4 g-lg-5">
+            <!-- Left Column: Gallery, Highlights & Detailed Specs -->
+            <div class="col-12 col-lg-8">
+                <!-- Car Gallery Card -->
+                <div class="premium-card p-3 p-md-4 mb-4">
+                    <div class="car-detail-main-img-wrapper position-relative overflow-hidden rounded-4 bg-light text-center mb-3" style="max-height: 440px;">
+                        {% with first_img=car.images.first %}
+                            {% if first_img and first_img.image %}
+                                <img id="carDetailMainImage"
+                                     src="{{ first_img.image.url }}"
+                                     alt="{{ car.brand.name }} {{ car.title }}"
+                                     class="img-fluid w-100 object-fit-cover rounded-3"
+                                     style="max-height: 440px; min-height: 300px; object-fit: cover;">
+                            {% else %}
+                                <img id="carDetailMainImage"
+                                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUQhAtRGz3uLDLxsWgIByZUkOcOMsUPNaGxOe47DY9AHVGDl0LoBw4Q3kq89AUtdCpmLndRMV_BDELD8ViLao6d5Xcy-CBF9acEHxamgJFOFpUTska_oKNCYABH-BxCi6k1-5d0vktQRfQSsPZA7O3pyPl1Pif2WxRXsd9XMgPISqLjSYtCxjcgoNh2rR_Odi5QMu2JL2IprlY6lopRvbdT2F1Bk2yTdg6d0HbXoD_I1whu4Qf50Sofw"
+                                     alt="{{ car.brand.name }} {{ car.title }}"
+                                     class="img-fluid w-100 object-fit-cover rounded-3"
+                                     style="max-height: 440px; min-height: 300px; object-fit: cover;">
+                            {% endif %}
+                        {% endwith %}
+
+                        <!-- Verified Watermark Badge -->
+                        <div class="position-absolute bottom-0 start-0 m-3">
+                            <span class="badge bg-dark bg-opacity-75 text-white backdrop-blur px-3 py-2 rounded-pill fs-8 d-inline-flex align-items-center gap-1">
+                                <span class="material-symbols-outlined fs-6 text-warning">verified</span>
+                                Certified CarVistaHub Dealership Unit
+                            </span>
+                        </div>
+
+                        <!-- Floating Wishlist Button -->
+                        <button type="button"
+                                class="wishlist-btn position-absolute top-0 end-0 m-3 btn btn-light rounded-circle p-2 shadow-sm d-flex align-items-center justify-content-center border-0"
+                                data-car-id="{{ car.id }}"
+                                data-car-title="{{ car.title }}"
+                                title="{% if car.id in user_wishlist_car_ids %}Remove from Wishlist{% else %}Add to Wishlist{% endif %}"
+                                aria-label="{% if car.id in user_wishlist_car_ids %}Remove {{ car.title }} from Wishlist{% else %}Add {{ car.title }} to Wishlist{% endif %}">
+                            <span class="material-symbols-outlined fs-5 wishlist-icon {% if car.id in user_wishlist_car_ids %}filled text-danger{% else %}text-muted{% endif %}">
+                                favorite
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- Thumbnails row if multiple images exist -->
+                    {% if car.images.count > 1 %}
+                        <div class="d-flex gap-2 overflow-x-auto pb-2" id="galleryThumbnails">
+                            {% for img_obj in car.images.all %}
+                                <button type="button"
+                                        class="btn p-0 border rounded-3 overflow-hidden flex-shrink-0 thumbnail-btn {% if forloop.first %}border-primary border-2{% endif %}"
+                                        style="width: 80px; height: 60px;"
+                                        onclick="changeMainImage('{{ img_obj.image.url }}', this)">
+                                    <img src="{{ img_obj.image.url }}" alt="{{ car.title }}" class="w-100 h-100 object-fit-cover">
+                                </button>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Key Quick Specifications Grid (6 Tiles) -->
+                <div class="row row-cols-2 row-cols-sm-3 g-3 mb-4">
+                    <!-- Fuel Type -->
+                    <div class="col">
+                        <div class="p-3 bg-white border rounded-4 shadow-sm h-100 d-flex align-items-center gap-3">
+                            <div class="advantage-icon-box m-0 flex-shrink-0" style="width: 48px; height: 48px;">
+                                <span class="material-symbols-outlined fs-4 text-primary">local_gas_station</span>
+                            </div>
+                            <div>
+                                <div class="text-muted fs-8 text-uppercase fw-semibold">Fuel Type</div>
+                                <div class="fw-bold text-dark fs-7">{{ car.get_fuel_type_display }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transmission -->
+                    <div class="col">
+                        <div class="p-3 bg-white border rounded-4 shadow-sm h-100 d-flex align-items-center gap-3">
+                            <div class="advantage-icon-box m-0 flex-shrink-0" style="width: 48px; height: 48px;">
+                                <span class="material-symbols-outlined fs-4 text-primary">settings</span>
+                            </div>
+                            <div>
+                                <div class="text-muted fs-8 text-uppercase fw-semibold">Transmission</div>
+                                <div class="fw-bold text-dark fs-7">{{ car.get_transmission_display }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Engine Specs -->
+                    <div class="col">
+                        <div class="p-3 bg-white border rounded-4 shadow-sm h-100 d-flex align-items-center gap-3">
+                            <div class="advantage-icon-box m-0 flex-shrink-0" style="width: 48px; height: 48px;">
+                                <span class="material-symbols-outlined fs-4 text-primary">speed</span>
+                            </div>
+                            <div>
+                                <div class="text-muted fs-8 text-uppercase fw-semibold">Engine / Motor</div>
+                                <div class="fw-bold text-dark fs-7">{{ car.engine_capacity }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mileage / Range -->
+                    <div class="col">
+                        <div class="p-3 bg-white border rounded-4 shadow-sm h-100 d-flex align-items-center gap-3">
+                            <div class="advantage-icon-box m-0 flex-shrink-0" style="width: 48px; height: 48px;">
+                                <span class="material-symbols-outlined fs-4 text-primary">eco</span>
+                            </div>
+                            <div>
+                                <div class="text-muted fs-8 text-uppercase fw-semibold">Mileage / Range</div>
+                                <div class="fw-bold text-dark fs-7">{{ car.mileage }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seating Capacity -->
+                    <div class="col">
+                        <div class="p-3 bg-white border rounded-4 shadow-sm h-100 d-flex align-items-center gap-3">
+                            <div class="advantage-icon-box m-0 flex-shrink-0" style="width: 48px; height: 48px;">
+                                <span class="material-symbols-outlined fs-4 text-primary">airline_seat_recline_normal</span>
+                            </div>
+                            <div>
+                                <div class="text-muted fs-8 text-uppercase fw-semibold">Seating</div>
+                                <div class="fw-bold text-dark fs-7">{{ car.seating_capacity }} Persons</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Body Type -->
+                    <div class="col">
+                        <div class="p-3 bg-white border rounded-4 shadow-sm h-100 d-flex align-items-center gap-3">
+                            <div class="advantage-icon-box m-0 flex-shrink-0" style="width: 48px; height: 48px;">
+                                <span class="material-symbols-outlined fs-4 text-primary">directions_car</span>
+                            </div>
+                            <div>
+                                <div class="text-muted fs-8 text-uppercase fw-semibold">Body Style</div>
+                                <div class="fw-bold text-dark fs-7">{{ car.get_body_type_display }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vehicle Overview & Description -->
+                <div class="premium-card p-4 p-md-5 mb-4">
+                    <h2 class="autohub-section-title fs-4 mb-3 d-flex align-items-center gap-2">
+                        <span class="material-symbols-outlined text-primary fs-4">description</span>
+                        <span>Vehicle Overview</span>
+                    </h2>
+                    {% if car.description %}
+                        <p class="text-secondary fs-6 leading-relaxed mb-0" style="white-space: pre-line;">
+                            {{ car.description }}
+                        </p>
+                    {% else %}
+                        <p class="text-secondary fs-6 leading-relaxed mb-0">
+                            Experience automotive excellence with the {{ car.brand.name }} {{ car.title }}. Engineered for optimal efficiency, exceptional road manners, and premium occupant safety, this model represents one of the finest offerings in the {{ car.get_body_type_display }} segment.
+                        </p>
+                    {% endif %}
+                </div>
+
+                <!-- Comprehensive Technical Specifications Table -->
+                <div class="premium-card p-4 p-md-5 mb-4">
+                    <h2 class="autohub-section-title fs-4 mb-3 d-flex align-items-center gap-2">
+                        <span class="material-symbols-outlined text-primary fs-4">tune</span>
+                        <span>Complete Technical Specifications</span>
+                    </h2>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <tbody>
+                                <tr>
+                                    <th scope="row" class="text-muted fw-semibold py-3" style="width: 35%;">Brand / Manufacturer</th>
+                                    <td class="fw-bold text-dark py-3">{{ car.brand.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-muted fw-semibold py-3">Model Variant</th>
+                                    <td class="fw-bold text-dark py-3">{{ car.title }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-muted fw-semibold py-3">Body Style Category</th>
+                                    <td class="fw-semibold text-dark py-3">{{ car.get_body_type_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-muted fw-semibold py-3">Powertrain / Fuel Type</th>
+                                    <td class="fw-semibold text-dark py-3">{{ car.get_fuel_type_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-muted fw-semibold py-3">Transmission</th>
+                                    <td class="fw-semibold text-dark py-3">{{ car.get_transmission_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-muted fw-semibold py-3">Engine / Motor Capacity</th>
+                                    <td class="fw-semibold text-dark py-3">{{ car.engine_capacity }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-muted fw-semibold py-3">Mileage / Operating Range</th>
+                                    <td class="fw-semibold text-dark py-3">{{ car.mileage }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-muted fw-semibold py-3">Certified Seating Capacity</th>
+                                    <td class="fw-semibold text-dark py-3">{{ car.seating_capacity }} Passengers</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-muted fw-semibold py-3">Available Exterior Colors</th>
+                                    <td class="fw-semibold text-dark py-3">{{ car.color_options }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-muted fw-semibold py-3">Inventory Stock Quantity</th>
+                                    <td class="fw-semibold text-dark py-3">{{ car.stock_quantity }} Unit{{ car.stock_quantity|pluralize }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-muted fw-semibold py-3">Ex-Showroom Price</th>
+                                    <td class="fw-bold text-primary py-3">₹{{ car.price|indian_currency }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-muted fw-semibold py-3">Advance Booking Deposit</th>
+                                    <td class="fw-semibold text-dark py-3">₹{{ car.booking_amount|indian_currency }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Features & Equipment (if mapped) -->
+                {% if car.feature_mappings.all %}
+                    <div class="premium-card p-4 p-md-5 mb-4">
+                        <h2 class="autohub-section-title fs-4 mb-3 d-flex align-items-center gap-2">
+                            <span class="material-symbols-outlined text-primary fs-4">verified_user</span>
+                            <span>Features & Equipment</span>
+                        </h2>
+                        <div class="row g-2">
+                            {% for mapping in car.feature_mappings.all %}
+                                <div class="col-12 col-sm-6">
+                                    <div class="p-2 px-3 bg-light rounded-3 d-flex align-items-center gap-2">
+                                        <span class="material-symbols-outlined text-primary fs-6">check_circle</span>
+                                        <span class="fw-semibold fs-7">{{ mapping.feature.name }}</span>
+                                        <span class="badge bg-secondary-subtle text-secondary ms-auto fs-9">{{ mapping.feature.get_category_display }}</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Right Column: Sticky Showroom Booking & Actions Card -->
+            <div class="col-12 col-lg-4">
+                <div class="position-sticky" style="top: 90px;">
+                    <!-- Pricing & Reservation Card -->
+                    <div class="premium-card p-4 mb-4 border-top border-4 border-primary">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted fs-8 text-uppercase fw-bold tracking-wide">Showroom Price</span>
+                            {% if car.is_available %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill fs-8">
+                                    ● Available
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill fs-8">
+                                    ● Out of Stock
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="display-6 fw-bold text-dark mb-1">
+                            ₹{{ car.price|indian_currency }}
+                        </div>
+                        <div class="text-muted fs-8 mb-4">Estimated Ex-Showroom Price in India</div>
+
+                        <div class="p-3 bg-light rounded-3 mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fs-8 text-muted">Advance Booking Fee:</span>
+                                <span class="fw-bold text-dark fs-7">₹{{ car.booking_amount|indian_currency }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fs-8 text-muted">Stock Status:</span>
+                                <span class="fw-bold {% if car.stock_quantity > 0 %}text-success{% else %}text-danger{% endif %} fs-8">
+                                    {{ car.stock_quantity }} Unit{{ car.stock_quantity|pluralize }} Ready
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 mb-3">
+                            <!-- Online Car Booking Button with Stock & Role Safeguards -->
+                            {% if car.is_available and car.stock_quantity > 0 %}
+                                {% if not request.user.is_authenticated %}
+                                    <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-success py-3 d-flex align-items-center justify-content-center gap-2 w-100 fw-bold shadow-sm border-0" id="btnBookCarLogin">
+                                        <span class="material-symbols-outlined fs-5">shopping_cart_checkout</span>
+                                        <span>Book Vehicle Online (Advance: ₹{{ car.booking_amount|indian_currency }})</span>
+                                    </a>
+                                {% elif request.user.user_type != 'CUSTOMER' %}
+                                    <button type="button" class="btn btn-secondary py-3 d-flex align-items-center justify-content-center gap-2 w-100 disabled" disabled title="Only registered customers can book vehicles">
+                                        <span class="material-symbols-outlined fs-5">lock</span>
+                                        <span>Staff/Manager Mode (Customer Booking Disabled)</span>
+                                    </button>
+                                {% else %}
+                                    <button type="button" 
+                                            class="btn btn-success py-3 d-flex align-items-center justify-content-center gap-2 w-100 fw-bold shadow-sm border-0" 
+                                            id="btnBookCarNow" 
+                                            data-car-id="{{ car.id }}" 
+                                            data-car-title="{{ car.title }}"
+                                            data-car-brand="{{ car.brand.name }}"
+                                            data-booking-amount="{{ car.booking_amount|indian_currency }}">
+                                        <span class="material-symbols-outlined fs-5">shopping_cart_checkout</span>
+                                        <span id="btnBookCarText">Book Vehicle Online (Advance: ₹{{ car.booking_amount|indian_currency }})</span>
+                                    </button>
+                                {% endif %}
+                            {% else %}
+                                <button type="button" class="btn btn-secondary py-3 d-flex align-items-center justify-content-center gap-2 w-100 disabled" disabled>
+                                    <span class="material-symbols-outlined fs-5">block</span>
+                                    <span>Currently Out of Stock</span>
+                                </button>
+                            {% endif %}
+
+                            <button type="button" class="btn btn-autohub-primary py-3 d-flex align-items-center justify-content-center gap-2 w-100 border-0" data-bs-toggle="modal" data-bs-target="#showroomCalendarModal" id="btnOpenCalendarModal">
+                                <span class="material-symbols-outlined fs-5">calendar_month</span>
+                                <span>Schedule Test Drive</span>
+                            </button>
+                            {% if not request.user.is_authenticated %}
+                                <div class="text-center fs-8 text-muted">
+                                    <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="text-primary text-decoration-none fw-medium">Log in</a> or <a href="{% url 'accounts:register' %}?next={{ request.path }}" class="text-primary text-decoration-none fw-medium">sign up</a> to book your showroom appointment or reserve your vehicle
+                                </div>
+                            {% endif %}
+                            <a href="{% url 'cars:car_list' %}?brand={{ car.brand.slug }}" class="btn btn-outline-secondary py-2 fs-7 d-flex align-items-center justify-content-center gap-1">
+                                <span class="material-symbols-outlined fs-6">grid_view</span>
+                                <span>More {{ car.brand.name }} Models</span>
+                            </a>
+                            <a href="{% url 'cars:compare' %}?car={{ car.slug }}" class="btn btn-outline-primary py-2 fs-7 d-flex align-items-center justify-content-center gap-1 btn-compare-add" data-car-id="{{ car.id }}" title="Compare {{ car.title }}" aria-label="Compare {{ car.title }}">
+                                <span class="material-symbols-outlined fs-6">compare_arrows</span>
+                                <span>Compare with Other Cars</span>
+                            </a>
+                            <!-- Save to Wishlist Button -->
+                            <button type="button"
+                                    class="btn btn-outline-danger py-2 fs-7 d-flex align-items-center justify-content-center gap-2 w-100 wishlist-detail-btn"
+                                    data-car-id="{{ car.id }}"
+                                    data-car-title="{{ car.title }}"
+                                    title="{% if car.id in user_wishlist_car_ids %}Remove from Wishlist{% else %}Save to Wishlist{% endif %}">
+                                <span class="material-symbols-outlined fs-5 wishlist-icon {% if car.id in user_wishlist_car_ids %}filled text-danger{% endif %}">
+                                    favorite
+                                </span>
+                                <span class="wishlist-btn-text">
+                                    {% if car.id in user_wishlist_car_ids %}Saved in Wishlist{% else %}Add to Wishlist{% endif %}
+                                </span>
+                            </button>
+                        </div>
+
+                        <p class="fs-8 text-muted text-center mb-0">
+                            100% Refundable Booking Deposit • No Hidden Fees
+                        </p>
+                    </div>
+
+                    <!-- Showroom Trust & Assurance Card -->
+                    <div class="premium-card p-4">
+                        <h3 class="fs-6 fw-bold text-dark mb-3">The CarVistaHub Promise</h3>
+                        <ul class="list-unstyled mb-0 d-flex flex-column gap-3 fs-8">
+                            <li class="d-flex align-items-start gap-2">
+                                <span class="material-symbols-outlined text-primary fs-5 flex-shrink-0">verified</span>
+                                <div>
+                                    <div class="fw-bold text-dark">Authorized Showroom Inventory</div>
+                                    <div class="text-muted">All cars sourced directly from verified manufacturer brand dealerships.</div>
+                                </div>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <span class="material-symbols-outlined text-primary fs-5 flex-shrink-0">shield_with_heart</span>
+                                <div>
+                                    <div class="fw-bold text-dark">Official Warranty Included</div>
+                                    <div class="text-muted">Full nationwide manufacturer warranty and authorized roadside assistance.</div>
+                                </div>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <span class="material-symbols-outlined text-primary fs-5 flex-shrink-0">support_agent</span>
+                                <div>
+                                    <div class="fw-bold text-dark">Dedicated Concierge</div>
+                                    <div class="text-muted">Personal assistance with paperwork, insurance, and doorstep delivery.</div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =========================================================================
+             3. SIMILAR VEHICLES SECTION
+             ========================================================================= -->
+        {% if similar_cars %}
+            <div class="mt-5 pt-4 border-top">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-2">
+                    <div>
+                        <h2 class="autohub-section-title fs-3 mb-1">Similar Cars You May Like</h2>
+                        <p class="autohub-section-subtitle mb-0">Explore related models in the same segment or brand collection.</p>
+                    </div>
+                    <a href="{% url 'cars:car_list' %}" class="text-primary fw-bold d-inline-flex align-items-center gap-1">
+                        <span>View All Inventory</span>
+                        <span class="material-symbols-outlined fs-5">arrow_forward</span>
+                    </a>
+                </div>
+
+                <div class="row g-4">
+                    {% for sim_car in similar_cars %}
+                        <div class="col-12 col-md-4">
+                            <div class="car-card">
+                                <div class="car-card-img-wrapper">
+                                    <a href="{% url 'cars:car_detail' sim_car.slug %}" class="d-block w-100 h-100">
+                                        {% with sim_img=sim_car.images.first %}
+                                            {% if sim_img and sim_img.image %}
+                                                <img src="{{ sim_img.image.url }}" alt="{{ sim_car.title }}" class="car-card-img" loading="lazy">
+                                            {% else %}
+                                                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUQhAtRGz3uLDLxsWgIByZUkOcOMsUPNaGxOe47DY9AHVGDl0LoBw4Q3kq89AUtdCpmLndRMV_BDELD8ViLao6d5Xcy-CBF9acEHxamgJFOFpUTska_oKNCYABH-BxCi6k1-5d0vktQRfQSsPZA7O3pyPl1Pif2WxRXsd9XMgPISqLjSYtCxjcgoNh2rR_Odi5QMu2JL2IprlY6lopRvbdT2F1Bk2yTdg6d0HbXoD_I1whu4Qf50Sofw" alt="{{ sim_car.title }}" class="car-card-img" loading="lazy">
+                                            {% endif %}
+                                        {% endwith %}
+                                    </a>
+                                    <div class="car-card-badge">
+                                        <span class="autohub-badge-primary">{{ sim_car.get_body_type_display }}</span>
+                                    </div>
+                                </div>
+                                <div class="car-card-body">
+                                    <span class="text-primary fw-bold text-uppercase fs-8">{{ sim_car.brand.name }}</span>
+                                    <h4 class="car-title fs-6">
+                                        <a href="{% url 'cars:car_detail' sim_car.slug %}" class="text-reset text-decoration-none">
+                                            {{ sim_car.title }}
+                                        </a>
+                                    </h4>
+                                    <div class="car-price fs-6">
+                                        ₹{{ sim_car.price|indian_currency }}
+                                    </div>
+                                    <div class="car-spec-grid py-2 my-2">
+                                        <div class="car-spec-item">
+                                            <div class="car-spec-label">Fuel</div>
+                                            <div class="car-spec-value fs-8">{{ sim_car.get_fuel_type_display }}</div>
+                                        </div>
+                                        <div class="car-spec-item">
+                                            <div class="car-spec-label">Gear</div>
+                                            <div class="car-spec-value fs-8">{{ sim_car.get_transmission_display }}</div>
+                                        </div>
+                                        <div class="car-spec-item">
+                                            <div class="car-spec-label">Mileage</div>
+                                            <div class="car-spec-value fs-8">{{ sim_car.mileage }}</div>
+                                        </div>
+                                    </div>
+                                    <a href="{% url 'cars:car_detail' sim_car.slug %}" class="btn btn-autohub-primary w-100 py-2 fs-7 mt-auto">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Showroom Test Drive Availability Calendar Modal -->
+{% include "bookings/calendar_modal.html" %}
+
+<!-- Gallery Image Switcher Script -->
+<script>
+function changeMainImage(imgUrl, btnElem) {
+    var mainImg = document.getElementById('carDetailMainImage');
+    if (mainImg && imgUrl) {
+        mainImg.src = imgUrl;
+    }
+    var buttons = document.querySelectorAll('.thumbnail-btn');
+    buttons.forEach(function(b) {
+        b.classList.remove('border-primary', 'border-2');
+    });
+    if (btnElem) {
+        btnElem.classList.add('border-primary', 'border-2');
+    }
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/calendar.js' %}"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const btnBook = document.getElementById('btnBookCarNow');
+    if (!btnBook) return;
+
+    const originalBtnHTML = btnBook.innerHTML;
+
+    function resetButton() {
+        btnBook.disabled = false;
+        btnBook.innerHTML = originalBtnHTML;
+    }
+
+    btnBook.addEventListener('click', async function (e) {
+        e.preventDefault();
+        const carId = this.dataset.carId;
+        if (!carId) return;
+
+        // 1. Disable button and show spinner
+        btnBook.disabled = true;
+        btnBook.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Initializing Secure Checkout...';
+
+        try {
+            // 2. Request Razorpay order generation from secure backend
+            const createOrderUrl = "{% url 'payments:create_order' %}";
+            const response = await fetch(createOrderUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ car_id: carId })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                alert(data.error || 'Unable to initiate booking payment. Please try again.');
+                resetButton();
+                return;
+            }
+
+            // 3. Configure Razorpay Standard Checkout modal
+            const options = {
+                key: data.razorpay_key_id,
+                amount: data.amount,
+                currency: data.currency || 'INR',
+                name: 'CarVistaHub',
+                description: `Advance Booking for ${data.car_brand} ${data.car_title}`,
+                order_id: data.razorpay_order_id,
+                prefill: {
+                    name: data.customer_name || '',
+                    email: data.customer_email || '',
+                    contact: data.customer_phone || ''
+                },
+                notes: {
+                    booking_id: data.booking_id,
+                    car_id: data.car_id
+                },
+                theme: {
+                    color: '#0d6efd'
+                },
+                handler: async function (paymentResponse) {
+                    btnBook.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Verifying Payment & Reserving Stock...';
+
+                    try {
+                        const verifyUrl = "{% url 'payments:verify_payment' %}";
+                        const verifyResp = await fetch(verifyUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify({
+                                razorpay_order_id: paymentResponse.razorpay_order_id,
+                                razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                                razorpay_signature: paymentResponse.razorpay_signature
+                            })
+                        });
+
+                        const verifyData = await verifyResp.json();
+
+                        if (verifyResp.ok && verifyData.success) {
+                            // Redirect to confirmed booking receipt
+                            if (verifyData.redirect_url) {
+                                window.location.href = verifyData.redirect_url;
+                            } else {
+                                window.location.href = `{% url 'payments:booking_success' booking_id='__B_ID__' %}`.replace('__B_ID__', verifyData.booking_id);
+                            }
+                        } else {
+                            alert(verifyData.error || 'Payment verification encountered an issue. Our operations team has been notified.');
+                            resetButton();
+                        }
+                    } catch (vErr) {
+                        console.error('Payment verification request failed:', vErr);
+                        alert('A network error occurred while verifying your payment. Please check My Bookings or contact showroom support.');
+                        resetButton();
+                    }
+                },
+                modal: {
+                    ondismiss: function () {
+                        // Customer dismissed checkout popup without completing payment
+                        resetButton();
+                    }
+                }
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function (failResp) {
+                console.warn('Razorpay payment failed:', failResp.error);
+                const desc = (failResp.error && failResp.error.description) ? failResp.error.description : 'Payment could not be completed.';
+                alert(`Payment was not completed: ${desc}`);
+                resetButton();
+            });
+
+            rzp.open();
+        } catch (err) {
+            console.error('Booking order initialization error:', err);
+            alert('A connection error occurred while initiating checkout. Please try again.');
+            resetButton();
+        }
+    });
+});
+</script>
+{% endblock %}

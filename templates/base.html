@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="CarVistaHub — India's Premier Online Car Showroom. Explore verified new cars, compare specs side-by-side, and book test drives seamlessly.">
+    <title>{% block title %}CarVistaHub | Premium Car Showroom{% endblock %}</title>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Google Material Symbols Outlined -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+
+    <!-- Local Bootstrap 5 CSS Asset -->
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+
+    <!-- CarVistaHub Custom Design System CSS -->
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+    <!-- Navbar Component -->
+    {% include "components/navbar.html" %}
+
+    <!-- Main Content Block -->
+    <main class="flex-grow-1">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer Component -->
+    {% include "components/footer.html" %}
+
+    <!-- Customer In-App Notification Rejection Modal -->
+    {% block customer_notification %}
+    {% include "components/customer_notification_modal.html" %}
+    {% endblock %}
+
+    <!-- Local Bootstrap 5 Bundle JS Asset -->
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- CarVistaHub Custom Application JS -->
+    <script src="{% static 'js/app.js' %}"></script>
+    {% block notifications_script %}
+    <script src="{% static 'js/notifications.js' %}"></script>
+    {% endblock %}
+    <script src="{% static 'js/wishlist.js' %}"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

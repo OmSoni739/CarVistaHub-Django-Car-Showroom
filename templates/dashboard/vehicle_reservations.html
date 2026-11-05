@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% load static %}
+{% load currency_tags %}
+
+{% block title %}My Vehicle Reservations | CarVistaHub{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-light min-vh-75">
+    <div class="container py-3">
+        <!-- Page Header -->
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 pb-3 border-bottom">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1 fs-8">
+                        <li class="breadcrumb-item"><a href="{% url 'cars:home' %}" class="text-decoration-none">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Vehicle Reservations</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-success fs-2">shopping_cart_checkout</span>
+                    <span>My Vehicle Reservations</span>
+                </h1>
+                <p class="text-muted fs-7 mb-0">Track your vehicle advance reservations, verified payment receipts, and delivery allocations.</p>
+            </div>
+            <div class="d-flex gap-2 mt-3 mt-md-0">
+                <a href="{% url 'dashboard:test_drive_appointments' %}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1 shadow-xs">
+                    <span class="material-symbols-outlined fs-6">calendar_month</span>
+                    <span>Test Drive Appointments</span>
+                </a>
+                <a href="{% url 'cars:car_list' %}" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1 shadow-xs">
+                    <span class="material-symbols-outlined fs-6">directions_car</span>
+                    <span>Browse Showroom Cars</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Vehicle Reservations Records Grid -->
+        {% if car_bookings %}
+            <div class="row g-4">
+                {% for cb in car_bookings %}
+                    <div class="col-12 col-lg-6">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden d-flex flex-column">
+                            <!-- Card Header: Booking Reference & Status Badge -->
+                            <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span class="fs-8 text-muted d-block">Booking Reference</span>
+                                    <span class="fw-bold text-dark fs-7 font-monospace">{{ cb.booking_id }}</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-1">
+                                    {% if cb.booking_status == 'CONFIRMED' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fs-8">
+                                            ● Confirmed
+                                        </span>
+                                    {% elif cb.booking_status == 'DELIVERED' %}
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-8">
+                                            ● Delivered
+                                        </span>
+                                    {% elif cb.booking_status == 'CANCELLED' %}
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 fs-8">
+                                            ● Cancelled
+                                        </span>
+                                    {% elif cb.booking_status == 'PENDING' and cb.payment_status == 'PAID' %}
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 fs-8">
+                                            ● Allocation In Progress
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 fs-8">
+                                            ● Payment Pending
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Card Body: Vehicle Details & Financial Summary -->
+                            <div class="card-body p-4 flex-grow-1">
+                                <div class="d-flex gap-3 align-items-center mb-3">
+                                    <div class="rounded-3 overflow-hidden bg-light border flex-shrink-0" style="width: 100px; height: 70px;">
+                                        {% with primary_img=cb.car.images.first %}
+                                            {% if primary_img and primary_img.image %}
+                                                <img src="{{ primary_img.image.url }}" alt="{{ cb.car.title }}" class="w-100 h-100 object-fit-cover">
+                                            {% else %}
+                                                <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
+                                                    <span class="material-symbols-outlined fs-3">directions_car</span>
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <span class="text-uppercase text-muted fs-8 fw-bold">{{ cb.car.brand.name }}</span>
+                                        <h5 class="fw-bold text-dark mb-0">{{ cb.car.title }}</h5>
+                                        <span class="fs-8 text-muted">{{ cb.car.get_body_type_display }} • {{ cb.car.get_fuel_type_display }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Financial Summary Box -->
+                                <div class="bg-light p-3 rounded-3 mb-3">
+                                    <div class="row g-2 fs-8">
+                                        <div class="col-6">
+                                            <span class="text-muted d-block">Advance Paid</span>
+                                            <strong class="text-success fs-7 d-flex align-items-center gap-1 mt-1">
+                                                <span class="material-symbols-outlined fs-7 text-success">payments</span>
+                                                ₹{{ cb.booking_amount|indian_currency }}
+                                            </strong>
+                                        </div>
+                                        <div class="col-6">
+                                            <span class="text-muted d-block">Payment Status</span>
+                                            <strong class="text-dark d-flex align-items-center gap-1 mt-1">
+                                                {% if cb.payment_status == 'PAID' %}
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                        Verified (PAID)
+                                                    </span>
+                                                {% elif cb.payment_status == 'FAILED' %}
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                                        Failed
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                                        Pending
+                                                    </span>
+                                                {% endif %}
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Transaction & Timestamp Reference -->
+                                <div class="d-flex flex-column gap-1 fs-8 text-muted mb-3 border p-2 px-3 rounded-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Booking Date:</span>
+                                        <span class="text-dark fw-medium">{{ cb.created_at|date:"D, d M Y, h:i A" }}</span>
+                                    </div>
+                                    {% if cb.payment and cb.payment.razorpay_payment_id %}
+                                        <div class="d-flex justify-content-between">
+                                            <span>Transaction ID:</span>
+                                            <span class="text-dark font-monospace">{{ cb.payment.razorpay_payment_id }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Allocation Notice or Active Reservation Banner -->
+                                {% if cb.booking_status == 'PENDING' and cb.payment_status == 'PAID' %}
+                                    <div class="alert alert-warning border-warning-subtle py-2 px-3 fs-8 mb-3 rounded-3 d-flex align-items-center gap-2">
+                                        <span class="material-symbols-outlined text-warning-emphasis fs-5 flex-shrink-0">hourglass_top</span>
+                                        <div>
+                                            <strong>Allocation Under Review:</strong> Payment received. Your vehicle allocation is being reviewed by our showroom team.
+                                        </div>
+                                    </div>
+                                {% elif cb.booking_status == 'CONFIRMED' %}
+                                    <div class="alert alert-success border-success-subtle py-2 px-3 fs-8 mb-3 rounded-3 d-flex align-items-center gap-2">
+                                        <span class="material-symbols-outlined text-success fs-5 flex-shrink-0">task_alt</span>
+                                        <div>
+                                            <strong>Reservation Active:</strong> Vehicle reserved at showroom. Our relationship manager will contact you for handover scheduling.
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Card Footer Actions -->
+                            <div class="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center">
+                                <a href="{% url 'cars:car_detail' slug=cb.car.slug %}" class="btn btn-sm btn-outline-secondary fs-8 py-1 px-3 d-inline-flex align-items-center gap-1">
+                                    <span>View Vehicle</span>
+                                    <span class="material-symbols-outlined fs-7">open_in_new</span>
+                                </a>
+                                <a href="{% url 'payments:booking_success' booking_id=cb.booking_id %}" class="btn btn-sm btn-primary fs-8 py-1 px-3 d-inline-flex align-items-center gap-1 shadow-xs">
+                                    <span class="material-symbols-outlined fs-7">receipt_long</span>
+                                    <span>View Receipt</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty State for Vehicle Reservations -->
+            <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+                <div class="py-4">
+                    <span class="material-symbols-outlined text-muted fs-1 mb-3">shopping_cart_checkout</span>
+                    <h4 class="fw-bold text-dark mb-2">No Vehicle Reservations Yet</h4>
+                    <p class="text-muted fs-7 mb-4">You have not reserved any vehicles online yet. Explore our verified new car inventory and book your preferred model with a refundable advance deposit.</p>
+                    <a href="{% url 'cars:car_list' %}" class="btn btn-primary px-4 py-2 shadow-xs d-inline-flex align-items-center gap-2">
+                        <span class="material-symbols-outlined fs-6">directions_car</span>
+                        <span>Browse Showroom Inventory</span>
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block customer_notification %}
+{# Strictly suppress Test Drive confirmation / rejection modals on vehicle reservations page #}
+{% endblock %}
+
+{% block notifications_script %}
+{# Strictly suppress background Test Drive notification polling scripts on vehicle reservations page #}
+{% endblock %}
+

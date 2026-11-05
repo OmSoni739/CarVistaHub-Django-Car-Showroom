@@ -1,0 +1,536 @@
+{% load static %}
+<!-- CarVistaHub - Customer Showroom Test Drive Availability Calendar Modal -->
+<div class="modal fade" id="showroomCalendarModal" tabindex="-1" aria-labelledby="showroomCalendarModalLabel"
+    aria-hidden="true" data-bs-backdrop="static"
+    data-is-authenticated="{% if request.user.is_authenticated %}true{% else %}false{% endif %}">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <!-- Modal Header -->
+            <div class="modal-header border-bottom py-3 px-4 bg-light align-items-center" id="calModalHeader">
+                <div class="d-flex align-items-center gap-2" id="calModalHeaderContent">
+                    <span class="material-symbols-outlined text-primary fs-3">calendar_month</span>
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark mb-0 fs-6" id="showroomCalendarModalLabel">Showroom
+                            Test Drive Availability</h5>
+                        <p class="fs-8 text-muted mb-0">Select an appointment date and a 1-hour showroom time slot</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"
+                    id="calModalCloseBtn"></button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body p-4">
+                <!-- STEP 1: CALENDAR SLOT SELECTION -->
+                <div id="calStepSelectSlot">
+                    {% if not request.user.is_authenticated %}
+                    <!-- Guest Authentication Notice Banner -->
+                    <div class="card border border-primary-subtle bg-primary-subtle rounded-3 p-4 mb-4 text-center"
+                        id="guestAuthPromptCard">
+                        <div class="d-inline-flex p-3 rounded-circle bg-white text-primary shadow-sm mb-3 mx-auto">
+                            <span class="material-symbols-outlined fs-2">lock</span>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-1">Unlock Test Drive Availability</h5>
+                        <p class="text-secondary fs-7 mb-3 px-2">
+                            Sign up or log in to explore available showroom appointments and book your preferred time
+                            slot.
+                        </p>
+                        <div class="d-flex justify-content-center gap-2 flex-wrap mb-2">
+                            <a href="{% url 'accounts:register' %}?next={{ request.path }}"
+                                class="btn btn-autohub-primary px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2"
+                                id="guestModalSignUpBtn">
+                                <span class="material-symbols-outlined fs-5">person_add</span>
+                                <span>Sign Up</span>
+                            </a>
+                            <a href="{% url 'accounts:login' %}?next={{ request.path }}"
+                                class="btn btn-outline-secondary px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2"
+                                id="guestModalLogInBtn">
+                                <span class="material-symbols-outlined fs-5">login</span>
+                                <span>Log In</span>
+                            </a>
+                        </div>
+                        <p class="fs-8 text-muted mb-0">
+                            Sign up or log in to access our Test Drive feature and book your preferred showroom
+                            appointment.
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Selected Vehicle Summary Strip -->
+                    <div class="card border rounded-3 p-3 mb-4 bg-light-subtle" id="calendarCarSummaryStrip"
+                        data-car-id="{{ car.id }}" data-car-title="{{ car.brand.name }} {{ car.title }}">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-2 overflow-hidden bg-white border d-flex align-items-center justify-content-center p-1"
+                                    style="width: 60px; height: 45px;">
+                                    {% if car.images.all %}
+                                    <img src="{{ car.images.first.image.url }}" alt="{{ car.title }}" class="img-fluid"
+                                        style="max-height: 40px; object-fit: contain;">
+                                    {% else %}
+                                    <span class="material-symbols-outlined text-muted fs-4">directions_car</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <span class="fs-8 text-muted text-uppercase fw-semibold">{{ car.brand.name }}</span>
+                                    <h6 class="fw-bold text-dark mb-0">{{ car.title }}</h6>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <span
+                                    class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-8">
+                                    Showroom Drive • 60 Mins
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Date Selection Strip (Rolling 7-Day Window) -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                            <span class="fs-7 fw-bold text-dark d-flex align-items-center gap-1">
+                                <span class="material-symbols-outlined fs-6 text-primary">event</span>
+                                <span>Choose Appointment Date</span>
+                            </span>
+                            <span
+                                class="badge bg-primary-subtle text-primary border border-primary-subtle fs-8 px-2 py-1 d-inline-flex align-items-center gap-1"
+                                id="calRollingWindowNotice">
+                                <span class="material-symbols-outlined fs-7">date_range</span>
+                                <span>Available for the next 7 days</span>
+                            </span>
+                        </div>
+
+                        <!-- Horizontal Date Pills Scrollable Container (Rolling 7 Days) -->
+                        <div class="d-flex gap-2 overflow-auto pb-2" id="calendarDatePillsContainer"
+                            style="scrollbar-width: thin;">
+                            <!-- Exactly 7 date pills rendered dynamically by calendar.js -->
+                        </div>
+                    </div>
+
+                    {% if request.user.is_authenticated %}
+                    <!-- Status Legend -->
+                    <div
+                        class="d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 px-3 rounded-3 bg-light mb-3 fs-8">
+                        <div class="d-flex align-items-center gap-1 text-muted">
+                            <span class="d-inline-block rounded-circle bg-success"
+                                style="width: 8px; height: 8px;"></span>
+                            <span>Available</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1 text-muted">
+                            <span class="d-inline-block rounded-circle bg-warning"
+                                style="width: 8px; height: 8px;"></span>
+                            <span>Pending Approval</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1 text-muted">
+                            <span class="d-inline-block rounded-circle bg-primary"
+                                style="width: 8px; height: 8px;"></span>
+                            <span>Booked</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1 text-muted">
+                            <span class="d-inline-block rounded-circle bg-secondary"
+                                style="width: 8px; height: 8px;"></span>
+                            <span>Closed / Break</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Locked Preview Legend (Guests) -->
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 px-3 rounded-3 bg-light mb-3 fs-8 text-muted"
+                        id="guestCalendarLegend">
+                        <div class="d-flex align-items-center gap-1 text-secondary">
+                            <span class="material-symbols-outlined fs-6">lock</span>
+                            <span class="fw-medium">Appointment slots locked</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="badge bg-secondary-subtle text-secondary fs-9">Locked Preview</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Dynamic Slots Area -->
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fs-7 fw-bold text-dark d-flex align-items-center gap-1">
+                                <span class="material-symbols-outlined fs-6 text-primary">schedule</span>
+                                <span id="calendarSelectedDateLabel">Select a date above</span>
+                            </span>
+                            <span class="fs-8 text-muted" id="calendarSyncStatus">
+                                <span class="spinner-border spinner-border-sm me-1 d-none" id="calendarLoadingSpinner"
+                                    role="status"></span>
+                                <span id="calendarLastSyncText">Live Sync Active</span>
+                            </span>
+                        </div>
+
+                        <!-- Alert message container -->
+                        <div id="calendarAlertContainer" class="d-none"></div>
+
+                        <!-- Slots Grid -->
+                        <div class="row row-cols-2 row-cols-md-4 g-2" id="customerSlotsContainer">
+                            <!-- Populated by calendar.js -->
+                        </div>
+                    </div>
+
+                    <!-- Selected Slot Preview Card -->
+                    <div class="card border border-primary-subtle bg-primary-subtle rounded-3 p-3 d-none mt-3"
+                        id="customerSelectedSlotCard">
+                        <div class="d-flex align-items-start justify-content-between">
+                            <div>
+                                <span class="badge bg-primary text-white mb-1">Selected Appointment Slot</span>
+                                <h6 class="fw-bold text-dark mb-1" id="selectedSlotSummaryText">--</h6>
+                                <p class="fs-8 text-muted mb-0">
+                                    <strong>Vehicle:</strong> {{ car.brand.name }} {{ car.title }} |
+                                    <strong>Location:</strong> CarVistaHub Showroom
+                                </p>
+                            </div>
+                            <span class="material-symbols-outlined text-primary fs-2">check_circle</span>
+                        </div>
+                        <div class="alert alert-success py-2 px-3 fs-8 mb-0 mt-3 d-flex align-items-center gap-2">
+                            <span class="material-symbols-outlined fs-5 flex-shrink-0">verified</span>
+                            <span>
+                                Slot available. Click <strong>Continue</strong> below to complete your booking details.
+                            </span>
+                        </div>
+                    </div>
+                </div><!-- /#calStepSelectSlot -->
+
+                <!-- STEP 2: CUSTOMER BOOKING DETAILS FORM -->
+                <div id="calStepBookingForm" class="d-none">
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="material-symbols-outlined text-primary fs-5">badge</span>
+                            <h6 class="fw-bold mb-0 text-dark fs-6">Customer &amp; Booking Details</h6>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-8">
+                            Step 2 of 2
+                        </span>
+                    </div>
+
+                    <!-- Appointment Summary Card -->
+                    <div class="card border rounded-3 p-3 mb-3 bg-light-subtle">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-12 col-md-7">
+                                <span class="fs-9 text-muted text-uppercase fw-semibold">Selected Vehicle &amp;
+                                    Slot</span>
+                                <div class="fw-bold text-dark fs-7" id="formSummaryCarTitle">{{ car.brand.name }} {{
+                                    car.title }}</div>
+                                <div class="fs-8 text-primary fw-medium" id="formSummarySlotTime">--</div>
+                            </div>
+                            <div class="col-12 col-md-5 text-md-end">
+                                <span class="fs-9 text-muted text-uppercase fw-semibold">Showroom Location</span>
+                                <div
+                                    class="fw-bold text-dark fs-8 d-flex align-items-center justify-content-md-end gap-1">
+                                    <span class="material-symbols-outlined text-primary fs-6">storefront</span>
+                                    <span>CarVistaHub Showroom</span>
+                                </div>
+                                <span class="badge bg-secondary-subtle text-secondary fs-9">Fixed Location</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alert message container for form -->
+                    <div id="bookingFormAlertContainer" class="d-none"></div>
+
+                    <!-- Booking Form Fields -->
+                    <form id="customerBookingSubmissionForm" novalidate>
+                        <!-- Customer Details (Prefilled from profile/account) -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fs-8 fw-semibold text-secondary mb-1">Full Name</label>
+                                <input type="text" class="form-control form-control-sm bg-light" id="inputFullName"
+                                    value="{% if request.user.is_authenticated %}{{ request.user.get_full_name|default:request.user.username }}{% endif %}"
+                                    readonly tabindex="-1">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fs-8 fw-semibold text-secondary mb-1">Email Address</label>
+                                <input type="email" class="form-control form-control-sm bg-light" id="inputEmail"
+                                    value="{% if request.user.is_authenticated %}{{ request.user.email }}{% endif %}"
+                                    readonly tabindex="-1">
+                            </div>
+                            <div class="col-12">
+                                <label for="inputContactPhone" class="form-label fs-8 fw-semibold text-secondary mb-1">
+                                    Contact Phone Number
+                                </label>
+                                <input type="tel" class="form-control form-control-sm" id="inputContactPhone"
+                                    placeholder="10-digit mobile number"
+                                    value="{% if request.user.is_authenticated %}{{ request.user.phone_number }}{% endif %}">
+                                <div class="form-text fs-9 text-muted">Used by our Showroom Manager to coordinate your
+                                    arrival.</div>
+                            </div>
+                        </div>
+
+                        <!-- Driving Licence Front Side Image Upload Field -->
+                        <div class="mb-3">
+                            <label for="inputDrivingLicenseImage"
+                                class="form-label fs-8 fw-semibold text-secondary mb-1">
+                                Upload Driving Licence (Front Side) <span class="text-danger">*</span>
+                            </label>
+                            <input type="file" class="form-control form-control-sm" id="inputDrivingLicenseImage"
+                                name="license_image" accept="image/jpeg,image/jpg,image/png" required>
+                            <div class="form-text fs-9 text-muted">
+                                Upload a clear photo of the front side of your original Indian Driving Licence. Ensure
+                                all important details are readable.
+                            </div>
+                            <div class="invalid-feedback fs-8" id="drivingLicenseFeedback">
+                                Please select a clear photo (JPG or PNG, max 5 MB) of the front side of your driving
+                                licence.
+                            </div>
+                        </div>
+
+                        <!-- Customer Notes (Optional) -->
+                        <div class="mb-3">
+                            <label for="inputCustomerNotes" class="form-label fs-8 fw-semibold text-secondary mb-1">
+                                Special Requests or Notes <span class="text-muted fw-normal">(Optional)</span>
+                            </label>
+                            <textarea class="form-control form-control-sm" id="inputCustomerNotes" rows="2"
+                                placeholder="e.g. Inquiring about transmission specs, child seat availability, specific variant..."></textarea>
+                        </div>
+
+                        <!-- Terms & Conditions Checkbox -->
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="inputTermsAgreed" required>
+                            <label class="form-check-label fs-8 text-secondary" for="inputTermsAgreed">
+                                I agree to the <a href="#" class="text-primary text-decoration-none fw-medium"
+                                    tabindex="-1">CarVistaHub Test Drive Terms &amp; Conditions</a>. I
+                                understand that this appointment slot will be temporarily held for 24 hours
+                                pending manual licence verification by the Showroom Manager. <span
+                                    class="text-danger">*</span>
+                            </label>
+                            <div class="invalid-feedback fs-8" id="termsFeedback">
+                                You must accept the terms and conditions to proceed.
+                            </div>
+                        </div>
+
+                        <!-- Form Action Buttons -->
+                        <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                            <button type="button"
+                                class="btn btn-outline-secondary fs-7 py-2 px-3 d-flex align-items-center gap-1"
+                                id="btnBackToCalendar">
+                                <span class="material-symbols-outlined fs-6">chevron_left</span>
+                                <span>Back to Calendar</span>
+                            </button>
+                            <button type="submit"
+                                class="btn btn-autohub-primary fs-7 py-2 px-4 d-flex align-items-center gap-2"
+                                id="btnSubmitBooking">
+                                <span class="spinner-border spinner-border-sm d-none" id="submitBookingSpinner"
+                                    role="status" aria-hidden="true"></span>
+                                <span class="material-symbols-outlined fs-6" id="submitBookingIcon">send</span>
+                                <span id="submitBookingText">Confirm &amp; Book Test Drive</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- STEP 3: SUBMISSION SUCCESS CONFIRMATION -->
+                <div id="calStepSuccess" class="d-none text-center py-4 px-2">
+                    <div class="d-inline-flex p-3 rounded-circle bg-success-subtle text-success mb-3 shadow-sm">
+                        <span class="material-symbols-outlined fs-1">task_alt</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">Test Drive Request Submitted!</h5>
+                    <p class="fs-8 text-muted mb-4">Your appointment slot has been reserved and is awaiting Showroom
+                        Manager review.</p>
+
+                    <!-- Booking Reference Badge -->
+                    <div class="card border rounded-3 p-3 mb-4 bg-light text-start shadow-xs">
+                        <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                            <div>
+                                <span class="fs-9 text-muted text-uppercase fw-semibold">Booking Reference</span>
+                                <div class="fw-bold fs-6 text-primary font-monospace" id="successBookingNumber">
+                                    TD-XXXXXXXX</div>
+                            </div>
+                            <span class="badge bg-warning text-dark px-3 py-1 fs-8 fw-semibold">
+                                Pending Manager Review
+                            </span>
+                        </div>
+                        <div class="row g-2 fs-8">
+                            <div class="col-6">
+                                <span class="text-muted">Vehicle:</span>
+                                <div class="fw-bold text-dark" id="successCarTitle">--</div>
+                            </div>
+                            <div class="col-6">
+                                <span class="text-muted">Showroom Location:</span>
+                                <div class="fw-bold text-dark">CarVistaHub Showroom</div>
+                            </div>
+                            <div class="col-6">
+                                <span class="text-muted">Appointment Date:</span>
+                                <div class="fw-bold text-dark" id="successDate">--</div>
+                            </div>
+                            <div class="col-6">
+                                <span class="text-muted">Time Slot:</span>
+                                <div class="fw-bold text-dark" id="successTime">--</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-2 pt-2">
+                        <button type="button" class="btn btn-autohub-primary px-4 py-2 fs-7 fw-semibold"
+                            data-bs-dismiss="modal" id="btnSuccessDone">
+                            Done
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary px-3 py-2 fs-7"
+                            id="btnSuccessViewCalendar">
+                            View Calendar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-header border-top py-3 px-4 bg-light d-flex justify-content-between" id="calModalFooter">
+                <button type="button" class="btn btn-outline-secondary fs-7 py-2 px-3 d-flex align-items-center gap-1"
+                    id="calManualRefreshBtn">
+                    <span class="material-symbols-outlined fs-6">refresh</span>
+                    <span>Refresh</span>
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary fs-7 py-2 px-3"
+                        data-bs-dismiss="modal">Close</button>
+                    {% if request.user.is_authenticated %}
+                    <button type="button" class="btn btn-autohub-primary fs-7 py-2 px-4 d-flex align-items-center gap-1"
+                        id="calContinueBtn" disabled>
+                        <span>Continue</span>
+                        <span class="material-symbols-outlined fs-6">arrow_forward</span>
+                    </button>
+                    {% else %}
+                    <a href="{% url 'accounts:login' %}?next={{ request.path }}"
+                        class="btn btn-autohub-primary fs-7 py-2 px-4 d-flex align-items-center gap-1"
+                        id="calGuestLoginActionBtn">
+                        <span class="material-symbols-outlined fs-6">lock_open</span>
+                        <span>Sign In to Unlock</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Customer Confirmed Booking Details (Phase B) -->
+<div class="modal fade" id="modalCustomerBookingDetails" tabindex="-1"
+    aria-labelledby="modalCustomerBookingDetailsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-success text-white py-3 px-4">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined fs-4">task_alt</span>
+                    <div>
+                        <h6 class="modal-title fs-6 fw-bold mb-0" id="modalCustomerBookingDetailsLabel">Confirmed Test
+                            Drive Appointment</h6>
+                        <span class="fs-9 text-white-50">Showroom Appointment Confirmed</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-3">
+                    <div
+                        class="d-inline-flex align-items-center justify-content-center bg-success-subtle text-success rounded-circle p-3 mb-2">
+                        <span class="material-symbols-outlined fs-1">verified</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">Your Test Drive is Confirmed!</h5>
+                    <p class="fs-8 text-muted mb-0">Your appointment slot has been locked and confirmed with the
+                        showroom.</p>
+                </div>
+
+                <div class="bg-light rounded-3 p-3 mb-3 border fs-8">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                        <span class="text-muted">Booking Reference:</span>
+                        <strong class="font-monospace text-dark" id="custBookingRef">--</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                        <span class="text-muted">Vehicle:</span>
+                        <strong class="text-dark" id="custBookingCar">--</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                        <span class="text-muted">Appointment Date:</span>
+                        <strong class="text-dark" id="custBookingDate">--</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                        <span class="text-muted">Time Slot:</span>
+                        <strong class="text-dark" id="custBookingTime">--</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                        <span class="text-muted">Showroom Location:</span>
+                        <strong class="text-dark" id="custBookingLocation">CarVistaHub Showroom</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Status:</span>
+                        <span class="badge bg-success text-white" id="custBookingStatus">CONFIRMED</span>
+                    </div>
+                </div>
+
+                <div class="alert alert-success py-2 px-3 fs-8 mb-3 d-flex align-items-start gap-2">
+                    <span class="material-symbols-outlined fs-6 text-success flex-shrink-0 mt-1">verified</span>
+                    <div>
+                        <strong>Appointment Locked:</strong> Please arrive at the showroom 10 minutes prior to your
+                        scheduled slot. Remember to carry your original Indian Driving Licence.
+                    </div>
+                </div>
+
+                <div id="custBookingAlert" class="alert alert-info py-2 px-3 fs-8 d-none mb-3"></div>
+
+                <!-- Prominent Cancel Test Drive Button -->
+                <div class="pt-2 border-top">
+                    <button type="button"
+                        class="btn btn-outline-danger w-100 py-2 d-flex align-items-center justify-content-center gap-1 fs-7 fw-semibold shadow-xs"
+                        id="btnCustomerCancelBooking">
+                        <span class="material-symbols-outlined fs-6">cancel</span>
+                        <span>Cancel Test Drive</span>
+                    </button>
+                    <div class="fs-9 text-muted text-center mt-1">If your plans have changed, you can cancel and free up
+                        the slot for others.</div>
+                </div>
+            </div>
+            <div class="modal-footer py-2 px-4 bg-light border-top d-flex justify-content-between">
+                <a href="{% url 'dashboard:test_drive_appointments' %}"
+                    class="btn btn-outline-secondary btn-sm fs-8 py-2 px-3">
+                    <span class="material-symbols-outlined fs-7 align-middle">calendar_month</span>
+                    <span>View Test Drive Appointments</span>
+                </a>
+                <button type="button" class="btn btn-secondary btn-sm fs-8 py-2 px-4"
+                    data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Customer Cancellation Confirmation Dialog (Phase C) -->
+<div class="modal fade" id="modalCustomerCancelConfirm" tabindex="-1" aria-labelledby="modalCustomerCancelConfirmLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-danger text-white py-3 px-4">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined fs-5">warning</span>
+                    <h6 class="modal-title fs-6 fw-bold mb-0" id="modalCustomerCancelConfirmLabel">Cancel Test-Drive
+                        Appointment</h6>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="fs-7 text-dark fw-bold mb-2">Are you sure you want to cancel your confirmed test-drive
+                    appointment?</p>
+                <p class="fs-8 text-muted mb-3">
+                    Cancelling will release your reserved showroom slot immediately, making it available for other
+                    customers. Your driving licence document will remain on file for future requests.
+                </p>
+                <div class="mb-3">
+                    <label for="custCancelReasonInput" class="form-label fs-8 text-muted mb-1">Reason for cancellation
+                        (optional):</label>
+                    <input type="text" class="form-control form-control-sm" id="custCancelReasonInput"
+                        placeholder="e.g. Schedule conflict, change of plans...">
+                </div>
+                <div id="custCancelErrorAlert" class="alert alert-danger py-2 px-3 fs-8 d-none"></div>
+            </div>
+            <div class="modal-footer py-2 px-4 bg-light border-top d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Keep
+                    Appointment</button>
+                <button type="button"
+                    class="btn btn-danger btn-sm px-4 d-inline-flex align-items-center gap-1 shadow-xs fw-semibold"
+                    id="btnSubmitCustomerCancel">
+                    <span class="material-symbols-outlined fs-7">cancel</span>
+                    <span>Yes, Confirm Cancellation</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

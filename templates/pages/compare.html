@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+{% load static currency_tags %}
+
+{% block title %}Compare Cars | CarVistaHub Showroom{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Compare Cars Specific Styles */
+    .compare-hero-bg {
+        background: linear-gradient(135deg, #eff4ff 0%, #f8f9ff 50%, #e5eeff 100%);
+    }
+
+    .compare-slot-card {
+        border-radius: var(--autohub-radius-lg);
+        background: #ffffff;
+        box-shadow: var(--autohub-shadow-level-1);
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        position: relative;
+        min-height: 290px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        border: 2px solid transparent;
+    }
+
+    .compare-slot-card:hover {
+        box-shadow: var(--autohub-shadow-level-2);
+    }
+
+    .compare-slot-empty {
+        border: 2px dashed var(--autohub-border-subtle);
+        background: rgba(239, 244, 255, 0.45);
+        padding: 2.25rem 1.5rem;
+        text-align: center;
+    }
+
+    .compare-slot-empty:hover {
+        border-color: var(--autohub-primary);
+        background: rgba(239, 244, 255, 0.75);
+    }
+
+    .compare-slot-filled {
+        border: 1px solid var(--autohub-border);
+        padding: 1.5rem;
+    }
+
+    .compare-slot-thumb {
+        height: 140px;
+        width: 100%;
+        object-fit: cover;
+        border-radius: var(--autohub-radius-md);
+        background-color: var(--autohub-surface-low);
+    }
+
+    .compare-icon-circle {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background-color: var(--autohub-primary-subtle);
+        color: var(--autohub-primary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .compare-slot-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+    }
+
+    .compare-table-container {
+        background: #ffffff;
+        border-radius: var(--autohub-radius-lg);
+        border: 1px solid var(--autohub-border);
+        box-shadow: var(--autohub-shadow-level-1);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .compare-table {
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+    }
+
+    .compare-table th,
+    .compare-table td {
+        padding: 1rem 1.25rem;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--autohub-border);
+    }
+
+    .compare-table thead th {
+        background-color: var(--autohub-surface-low);
+        font-weight: 700;
+        border-bottom: 2px solid var(--autohub-border);
+    }
+
+    .compare-label-col {
+        position: sticky;
+        left: 0;
+        background-color: #ffffff;
+        z-index: 2;
+        min-width: 220px;
+        width: 260px;
+        font-weight: 600;
+        color: var(--autohub-dark);
+        border-right: 2px solid var(--autohub-border);
+    }
+
+    .compare-table thead .compare-label-col {
+        background-color: var(--autohub-surface-low);
+    }
+
+    .compare-car-col {
+        min-width: 240px;
+        width: auto;
+        text-align: center;
+    }
+
+    .compare-group-header td {
+        background-color: var(--autohub-surface-low);
+        color: var(--autohub-primary);
+        font-weight: 800;
+        font-size: 0.925rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 0.85rem 1.25rem;
+        border-top: 1px solid var(--autohub-border);
+        border-bottom: 2px solid var(--autohub-border);
+    }
+
+    .compare-row-diff {
+        background-color: rgba(37, 99, 235, 0.035);
+    }
+
+    .compare-diff-badge {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.45rem;
+        border-radius: 9999px;
+        background-color: var(--autohub-primary-subtle);
+        color: var(--autohub-primary);
+        font-weight: 700;
+        margin-left: 0.5rem;
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    .compare-best-price {
+        font-size: 0.72rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 9999px;
+        background-color: #dcfce7;
+        color: #166534;
+        font-weight: 700;
+        display: inline-block;
+        margin-top: 0.25rem;
+    }
+
+    .modal-car-item {
+        border-radius: var(--autohub-radius-md);
+        border: 1px solid var(--autohub-border);
+        padding: 1rem;
+        background-color: #ffffff;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .modal-car-item:hover:not(.disabled) {
+        border-color: var(--autohub-primary);
+        box-shadow: var(--autohub-shadow-level-1);
+        transform: translateY(-2px);
+    }
+
+    .modal-car-item.disabled {
+        opacity: 0.65;
+        background-color: var(--autohub-surface-low);
+    }
+
+    .modal-car-thumb {
+        width: 100px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: var(--autohub-radius-sm);
+        background-color: var(--autohub-surface-low);
+    }
+
+    @media (max-width: 768px) {
+        .compare-label-col {
+            min-width: 160px;
+            width: 160px;
+            font-size: 0.85rem;
+            padding: 0.75rem 0.85rem;
+        }
+        .compare-car-col {
+            min-width: 190px;
+            font-size: 0.85rem;
+            padding: 0.75rem 0.85rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- =========================================================================
+     1. HERO / PAGE HEADER
+     ========================================================================= -->
+<section class="compare-hero-bg py-5 border-bottom">
+    <div class="autohub-container">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'cars:home' %}" class="text-primary fw-semibold">Home</a></li>
+                <li class="breadcrumb-item active text-secondary" aria-current="page">Compare Cars</li>
+            </ol>
+        </nav>
+
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill fw-bold text-uppercase fs-8 mb-2 d-inline-block">
+                    ★ Smart Vehicle Comparison
+                </span>
+                <h1 class="autohub-section-title mb-2">Compare Cars</h1>
+                <p class="autohub-section-subtitle mb-0">
+                    Find your perfect car by comparing prices, specifications, and features side-by-side.
+                </p>
+            </div>
+            <div>
+                <a href="{% url 'cars:car_list' %}" class="btn btn-outline-primary rounded-pill px-4 py-2 d-inline-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined fs-5">directions_car</span>
+                    Explore All Cars
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================================
+     2. CAR SELECTION SECTION (2 or 3 SLOTS)
+     ========================================================================= -->
+<section class="py-5" id="selection-section">
+    <div class="autohub-container">
+        <!-- Alert Notification for Compare Limits and Duplicates -->
+        <div id="compareAlertContainer" class="d-none mb-4">
+            <div id="compareAlert" class="alert alert-info alert-dismissible fade show d-flex align-items-center gap-2 rounded-3 shadow-sm mb-0" role="alert">
+                <span class="material-symbols-outlined fs-5 flex-shrink-0" id="compareAlertIcon">info</span>
+                <div class="flex-grow-1 fs-7" id="compareAlertMessage"></div>
+                <button type="button" class="btn-close" aria-label="Close" id="btnCloseCompareAlert"></button>
+            </div>
+        </div>
+
+        <!-- Slots Grid: Responsive 2 or 3 Columns -->
+        <div class="row g-4 justify-content-center mb-4" id="slotsRow">
+            <!-- Slot 1 -->
+            <div class="col-12 col-md-6 col-lg-4 slot-col" id="slot-col-1" data-slot="1">
+                <div class="compare-slot-card compare-slot-empty" id="slot-card-1">
+                    <div class="compare-icon-circle">
+                        <span class="material-symbols-outlined fs-2">directions_car</span>
+                    </div>
+                    <h3 class="fs-5 fw-bold text-dark mb-1">Choose Car 1</h3>
+                    <p class="text-muted fs-7 mb-4">Select a brand and model to start comparing.</p>
+                    <button type="button" class="btn btn-autohub-primary rounded-pill px-4 py-2 btn-select-car" data-slot="1" aria-label="Select Car 1">
+                        <span class="material-symbols-outlined fs-5 align-middle me-1">add_circle</span>
+                        Select Car
+                    </button>
+                </div>
+            </div>
+
+            <!-- Slot 2 -->
+            <div class="col-12 col-md-6 col-lg-4 slot-col" id="slot-col-2" data-slot="2">
+                <div class="compare-slot-card compare-slot-empty" id="slot-card-2">
+                    <div class="compare-icon-circle">
+                        <span class="material-symbols-outlined fs-2">directions_car</span>
+                    </div>
+                    <h3 class="fs-5 fw-bold text-dark mb-1">Choose Car 2</h3>
+                    <p class="text-muted fs-7 mb-4">Select a second model to view side-by-side specs.</p>
+                    <button type="button" class="btn btn-autohub-primary rounded-pill px-4 py-2 btn-select-car" data-slot="2" aria-label="Select Car 2">
+                        <span class="material-symbols-outlined fs-5 align-middle me-1">add_circle</span>
+                        Select Car
+                    </button>
+                </div>
+            </div>
+
+            <!-- Slot 3 (Initially hidden or rendered if active) -->
+            <div class="col-12 col-md-6 col-lg-4 slot-col d-none" id="slot-col-3" data-slot="3">
+                <div class="compare-slot-card compare-slot-empty" id="slot-card-3">
+                    <button type="button" class="btn btn-sm btn-icon-square text-muted border-0 position-absolute top-0 end-0 m-2 btn-remove-slot" title="Remove 3rd Slot" aria-label="Remove 3rd Slot">
+                        <span class="material-symbols-outlined fs-5">close</span>
+                    </button>
+                    <div class="compare-icon-circle">
+                        <span class="material-symbols-outlined fs-2">directions_car</span>
+                    </div>
+                    <h3 class="fs-5 fw-bold text-dark mb-1">Choose Car 3</h3>
+                    <p class="text-muted fs-7 mb-4">Optionally compare a 3rd model in the same view.</p>
+                    <button type="button" class="btn btn-autohub-primary rounded-pill px-4 py-2 btn-select-car" data-slot="3" aria-label="Select Car 3">
+                        <span class="material-symbols-outlined fs-5 align-middle me-1">add_circle</span>
+                        Select Car
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls: Add Another Car, Compare Button, Clear All, and Helper Text -->
+        <div class="text-center mt-3">
+            <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 mb-2">
+                <!-- Add Another Car Control -->
+                <button type="button" id="btnAddSlot" class="btn btn-outline-secondary rounded-pill px-4 py-2 d-inline-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined fs-5">add</span>
+                    Add Another Car
+                </button>
+
+                <!-- Primary Compare Submit Button -->
+                <button type="button" id="btnCompareSubmit" class="btn btn-autohub-primary rounded-pill px-5 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" disabled>
+                    <span class="material-symbols-outlined fs-5">compare_arrows</span>
+                    Compare Cars
+                </button>
+
+                <!-- Clear All Action -->
+                <button type="button" id="btnClearAll" class="btn btn-link text-danger text-decoration-none fs-7 py-2 d-none align-items-center gap-1">
+                    <span class="material-symbols-outlined fs-6">delete_sweep</span>
+                    Clear All
+                </button>
+            </div>
+
+            <p id="compareHelperText" class="text-muted fs-7 mb-0">
+                Select at least two different cars to compare specifications and features.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================================
+     3. COMPARISON RESULTS SECTION (Rendered dynamically below slots)
+     ========================================================================= -->
+<section class="py-5 bg-white border-top d-none" id="comparisonResultsSection">
+    <div class="autohub-container">
+        <!-- Results Section Header -->
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
+            <div>
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill fw-bold text-uppercase fs-8 mb-2 d-inline-block">
+                    ✓ Verified Showroom Specifications
+                </span>
+                <h2 class="autohub-section-title fs-2 mb-1">Your Car Comparison</h2>
+                <p class="autohub-section-subtitle mb-0" id="comparisonSubtitle">
+                    Comparing selected models side-by-side based on actual database specifications.
+                </p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" id="btnModifySelection" class="btn btn-outline-primary rounded-pill px-4 py-2 d-inline-flex align-items-center gap-2 fs-7">
+                    <span class="material-symbols-outlined fs-5">edit</span>
+                    Modify Selection
+                </button>
+                <button type="button" id="btnClearComparison" class="btn btn-outline-danger rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1 fs-7">
+                    <span class="material-symbols-outlined fs-5">close</span>
+                    Clear All
+                </button>
+            </div>
+        </div>
+
+        <!-- Comparison Table Wrapper -->
+        <div class="compare-table-container mb-4">
+            <table class="table compare-table align-middle" id="compareTable" aria-label="Car Comparison Table">
+                <thead id="compareTableHead">
+                    <!-- Dynamic summary headers populated by JS -->
+                </thead>
+                <tbody id="compareTableBody">
+                    <!-- Dynamic spec rows grouped by category populated by JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Comparison Footer Notes -->
+        <div class="p-4 bg-light rounded-3 text-muted fs-8 border">
+            <div class="d-flex align-items-center gap-2 mb-1 text-dark fw-semibold">
+                <span class="material-symbols-outlined text-primary fs-5">info</span>
+                <span>Important Information regarding Car Comparison</span>
+            </div>
+            <p class="mb-0">
+                All prices shown are standard ex-showroom base prices in INR (₹) formatted according to Indian currency standards. Specifications are sourced directly from verified manufacturer catalogs in the CarVistaHub database. Final on-road prices may differ based on state road taxes, registration fees, and optional accessories.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================================
+     4. SEARCHABLE CAR SELECTION MODAL
+     ========================================================================= -->
+<div class="modal fade" id="carSelectModal" tabindex="-1" aria-labelledby="carSelectModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <!-- Modal Header -->
+            <div class="modal-header bg-light py-3 px-4 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-primary fs-4">directions_car</span>
+                    <h5 class="modal-title fw-bold text-dark mb-0" id="carSelectModalLabel">Select Brand / Model</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Search Input Bar -->
+            <div class="p-3 border-bottom bg-white sticky-top">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted ps-3">
+                        <span class="material-symbols-outlined fs-5">search</span>
+                    </span>
+                    <input type="text" id="carModalSearchInput" class="form-control border-start-0 py-2 ps-1"
+                           placeholder="Search brand or model..." autocomplete="off" aria-label="Search brand or model">
+                    <button class="btn btn-outline-secondary border-start-0 d-none" type="button" id="btnClearModalSearch" aria-label="Clear Search">
+                        <span class="material-symbols-outlined fs-5 align-middle">clear</span>
+                    </button>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+                    <span class="text-muted fs-8" id="modalResultCount">Loading showroom inventory...</span>
+                    <span class="text-primary fs-8 fw-semibold" id="modalSlotIndicator">Assigning to Car 1</span>
+                </div>
+            </div>
+
+            <!-- Modal Results Body -->
+            <div class="modal-body p-3 p-md-4" id="carModalBody" style="min-height: 320px;">
+                <!-- Loading State -->
+                <div id="modalLoadingSpinner" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading cars...</span>
+                    </div>
+                    <p class="text-muted fs-7 mt-2">Fetching available cars...</p>
+                </div>
+
+                <!-- Car Items List Container -->
+                <div class="d-flex flex-column gap-3" id="modalCarList" style="display: none;">
+                    <!-- Injected dynamically via JavaScript -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="modalEmptyState" class="text-center py-5 d-none">
+                    <div class="advantage-icon-box mx-auto mb-3" style="width: 56px; height: 56px;">
+                        <span class="material-symbols-outlined fs-2 text-muted">search_off</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">No Matching Cars Found</h5>
+                    <p class="text-muted fs-7 mb-0">Try searching with a different brand (e.g. Hyundai, Tata, BMW) or model keyword.</p>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer bg-light py-2 px-4 border-top d-flex justify-content-between align-items-center">
+                <span class="text-muted fs-8">Tip: You can compare up to 3 cars at once.</span>
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Pass initial server car IDs if provided via URL -->
+<script>
+    window.CARVISTAHUB_INITIAL_CARS = {{ initial_car_ids|default:"[]"|safe }};
+</script>
+<script src="{% static 'js/compare.js' %}?v=2.1"></script>
+{% endblock %}

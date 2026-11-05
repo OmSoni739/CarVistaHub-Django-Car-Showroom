@@ -1,0 +1,87 @@
+{% load static %}
+<!-- CarVistaHub Localized Footer Component -->
+<footer class="autohub-footer" id="contact">
+    <div class="autohub-container">
+        <div class="row g-4 g-lg-5">
+            <!-- Brand Column -->
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="footer-brand d-flex align-items-center gap-2 mb-3">
+                    <img src="{% static 'images/carvistahub-logo-light.svg' %}" alt="CarVistaHub" height="36" class="d-inline-block">
+                </div>
+                <p class="footer-desc">
+                    Elevating the automotive buying experience across India through transparency, verified showrooms, and smart car comparison.
+                </p>
+                <div class="mt-3">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-semibold">
+                        🇮🇳 Verified Indian Showroom Network
+                    </span>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <h5 class="footer-heading">Quick Links</h5>
+                <ul class="footer-links-list">
+                    <li><a href="{% url 'cars:car_list' %}" class="footer-link">Browse Cars</a></li>
+                    <li><a href="{% url 'cars:compare' %}" class="footer-link">Compare Models</a></li>
+                    <li><a href="{% url 'cars:home' %}#how-it-works" class="footer-link">Book Test Drive</a></li>
+                    <li><a href="{% url 'cars:home' %}#shop-brands" class="footer-link">Popular Brands</a></li>
+                    <li><a href="{% url 'cars:home' %}#faq" class="footer-link">Car Buyer FAQ</a></li>
+                </ul>
+            </div>
+
+            <!-- Useful Links -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <h5 class="footer-heading">Useful Links</h5>
+                <ul class="footer-links-list">
+                    <li><a href="{% url 'cars:home' %}#advantages" class="footer-link">About CarVistaHub</a></li>
+                    <li><a href="{% url 'cars:home' %}#testimonials" class="footer-link">Customer Reviews</a></li>
+                    <li><a href="{% url 'cars:home' %}#how-it-works" class="footer-link">How It Works</a></li>
+                    <li><a href="{% url 'cars:home' %}#contact" class="footer-link">Showroom Locator</a></li>
+                    <li><a href="{% url 'cars:home' %}#contact" class="footer-link">Support Desk</a></li>
+                </ul>
+            </div>
+
+            <!-- Contact Information & Social Media -->
+            <div class="col-12 col-md-6 col-lg-4">
+                <h5 class="footer-heading">Contact Information</h5>
+                <div class="footer-contact-item">
+                    <span class="material-symbols-outlined text-primary fs-5">call</span>
+                    <span><strong>Toll-Free:</strong> +91 1800-CARVISTA (+91 1800-227-8478)</span>
+                </div>
+                <div class="footer-contact-item">
+                    <span class="material-symbols-outlined text-primary fs-5">mail</span>
+                    <span><strong>Email:</strong> support@carvistahub.in</span>
+                </div>
+                <div class="footer-contact-item">
+                    <span class="material-symbols-outlined text-primary fs-5">location_on</span>
+                    <span>CarVistaHub Tower, Bandra Kurla Complex (BKC), Mumbai, Maharashtra 400051, India</span>
+                </div>
+
+                <div class="d-flex align-items-center gap-3 mt-4">
+                    <a href="#social-share" class="footer-social-btn" title="Share" aria-label="Social Share">
+                        <span class="material-symbols-outlined fs-5">share</span>
+                    </a>
+                    <a href="#social-web" class="footer-social-btn" title="Website" aria-label="CarVistaHub Global">
+                        <span class="material-symbols-outlined fs-5">language</span>
+                    </a>
+                    <a href="#social-video" class="footer-social-btn" title="Videos" aria-label="YouTube Channel">
+                        <span class="material-symbols-outlined fs-5">videocam</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Bottom Divider & Legal Copyright -->
+        <div class="footer-divider d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <div class="footer-copyright">
+                © 2026 CarVistaHub. All Rights Reserved.
+            </div>
+            <div class="d-flex align-items-center">
+                <a href="#privacy" class="footer-legal-link">Privacy Policy</a>
+                <a href="#terms" class="footer-legal-link">Terms of Service</a>
+                <a href="#security" class="footer-legal-link">Security & Trust</a>
+            </div>
+        </div>
+    </div>
+</footer>

@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% load static %}
+{% load currency_tags %}
+
+{% block title %}My Wishlist | CarVistaHub{% endblock %}
+
+{% block content %}
+<!-- =========================================================================
+     MY WISHLIST HERO / HEADER SECTION
+     ========================================================================= -->
+<section class="bg-light py-5 border-bottom">
+    <div class="autohub-container">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2 fs-8">
+                <li class="breadcrumb-item"><a href="{% url 'cars:home' %}" class="text-decoration-none">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'cars:car_list' %}"
+                        class="text-decoration-none">Showroom</a></li>
+                <li class="breadcrumb-item active" aria-current="page">My Wishlist</li>
+            </ol>
+        </nav>
+
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div>
+                <h1 class="h2 fw-bold text-dark mb-1">
+                    <span>My Saved Vehicles</span>
+                </h1>
+                <p class="text-muted fs-7 mb-0">
+                    <span id="wishlistHeaderCount" class="fw-semibold text-dark">{{ total_count }}</span>
+                    vehicle{{ total_count|pluralize }} saved in your personal wishlist collection.
+                </p>
+            </div>
+            <div>
+                <a href="{% url 'cars:car_list' %}"
+                    class="btn btn-outline-primary d-inline-flex align-items-center gap-2 px-3 py-2">
+                    <span class="material-symbols-outlined fs-5">directions_car</span>
+                    <span>Browse Showroom</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================================
+     SAVED VEHICLES GRID / EMPTY STATE
+     ========================================================================= -->
+<section class="autohub-section py-5" id="wishlistSection">
+    <div class="autohub-container">
+
+        <!-- Live Toast Notification Container -->
+        <div id="wishlistToastContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1090;"></div>
+
+        <!-- 1. Grid of Saved Car Cards -->
+        <div class="row g-4 g-lg-5" id="wishlistGrid" {% if total_count == 0 %}style="display: none;"{% endif %}>
+            {% for item in wishlist_items %}
+            <div class="col-12 col-md-6 col-lg-4 wishlist-card-item" id="wishlist-item-{{ item.car.id }}"
+                data-car-id="{{ item.car.id }}">
+                <div class="car-card position-relative h-100">
+                    <!-- Car Image & Badges -->
+                    <div class="car-card-img-wrapper position-relative">
+                        <a href="{% url 'cars:car_detail' item.car.slug %}" class="d-block w-100 h-100">
+                            {% with first_img=item.car.images.first %}
+                            {% if first_img and first_img.image %}
+                            <img src="{{ first_img.image.url }}" alt="{{ item.car.brand.name }} {{ item.car.title }}"
+                                class="car-card-img" loading="lazy">
+                            {% else %}
+                            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUQhAtRGz3uLDLxsWgIByZUkOcOMsUPNaGxOe47DY9AHVGDl0LoBw4Q3kq89AUtdCpmLndRMV_BDELD8ViLao6d5Xcy-CBF9acEHxamgJFOFpUTska_oKNCYABH-BxCi6k1-5d0vktQRfQSsPZA7O3pyPl1Pif2WxRXsd9XMgPISqLjSYtCxjcgoNh2rR_Odi5QMu2JL2IprlY6lopRvbdT2F1Bk2yTdg6d0HbXoD_I1whu4Qf50Sofw"
+                                alt="{{ item.car.brand.name }} {{ item.car.title }}" class="car-card-img"
+                                loading="lazy">
+                            {% endif %}
+                            {% endwith %}
+                        </a>
+
+                        <!-- Body Style Badge -->
+                        <div class="car-card-badge">
+                            {% if item.car.is_featured %}
+                            <span class="autohub-badge-accent">Featured</span>
+                            {% elif item.car.fuel_type == 'ELECTRIC' or item.car.body_type == 'EV' %}
+                            <span class="autohub-badge-primary">EV</span>
+                            {% else %}
+                            <span class="autohub-badge-primary">{{ item.car.get_body_type_display }}</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Quick Remove Heart Button -->
+                        <button type="button"
+                            class="wishlist-btn position-absolute top-0 end-0 m-3 btn btn-light rounded-circle p-2 shadow-sm d-flex align-items-center justify-content-center border-0"
+                            data-car-id="{{ item.car.id }}" data-car-title="{{ item.car.title }}"
+                            title="Remove from Wishlist" aria-label="Remove {{ item.car.title }} from Wishlist">
+                            <span
+                                class="material-symbols-outlined fs-5 wishlist-icon filled text-danger">favorite</span>
+                        </button>
+                    </div>
+
+                    <!-- Car Card Details Body -->
+                    <div class="car-card-body d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="text-primary fw-bold text-uppercase fs-7 tracking-wide">{{ item.car.brand.name }}</span>
+                                <span class="text-muted fs-8">{{ item.car.seating_capacity }} Seater</span>
+                            </div>
+                            <h3 class="car-title">
+                                <a href="{% url 'cars:car_detail' item.car.slug %}"
+                                    class="text-reset text-decoration-none">
+                                    {{ item.car.title }}
+                                </a>
+                            </h3>
+
+                            <!-- Price in INR -->
+                            <div class="car-price mb-3">
+                                ₹{{ item.car.price|indian_currency }} <span
+                                    class="text-muted fw-normal fs-7">Ex-Showroom</span>
+                            </div>
+
+                            <!-- Specification Grid -->
+                            <div class="car-spec-grid mb-3">
+                                <div class="car-spec-item">
+                                    <div class="car-spec-label">Fuel</div>
+                                    <div class="car-spec-value">{{ item.car.get_fuel_type_display }}</div>
+                                </div>
+                                <div class="car-spec-item">
+                                    <div class="car-spec-label">Transmission</div>
+                                    <div class="car-spec-value">{{ item.car.get_transmission_display }}</div>
+                                </div>
+                                <div class="car-spec-item">
+                                    <div class="car-spec-label">Mileage/Range</div>
+                                    <div class="car-spec-value">{{ item.car.mileage|default:"—" }}</div>
+                                </div>
+                                <div class="car-spec-item">
+                                    <div class="car-spec-label">Drivetrain</div>
+                                    <div class="car-spec-value">{{ item.car.drivetrain|default:"—" }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Footer Actions -->
+                        <div class="d-flex gap-2 pt-3 border-top mt-auto">
+                            <a href="{% url 'cars:car_detail' item.car.slug %}"
+                                class="btn btn-autohub-primary flex-grow-1 py-2 fs-7 d-flex align-items-center justify-content-center gap-1">
+                                <span>View Details</span>
+                                <span class="material-symbols-outlined fs-6">arrow_forward</span>
+                            </a>
+                            <button type="button"
+                                class="btn btn-outline-danger py-2 px-3 fs-7 d-inline-flex align-items-center justify-content-center gap-1 wishlist-remove-btn"
+                                data-car-id="{{ item.car.id }}" data-car-title="{{ item.car.title }}"
+                                title="Remove from Wishlist">
+                                <span class="material-symbols-outlined fs-6">delete</span>
+                                <span class="d-none d-sm-inline">Remove</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 2. Empty State View -->
+        <div id="wishlistEmptyState" class="text-center py-5 my-4" {% if total_count > 0 %}style="display: none;"{% endif %}>
+            <div class="d-inline-flex align-items-center justify-content-center bg-danger-subtle text-danger rounded-circle p-4 mb-4 shadow-xs"
+                style="width: 96px; height: 96px;">
+                <span class="material-symbols-outlined" style="font-size: 48px;">favorite_border</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">Your Wishlist is Empty</h2>
+            <p class="text-muted fs-6 mx-auto mb-4" style="max-width: 520px;">
+                You haven't saved any vehicles to your wishlist yet. Explore our verified showroom of 32 models across 8
+                premier brands and click the heart icon on any car to save it for later comparison.
+            </p>
+            <div class="d-flex flex-wrap justify-content-center gap-3">
+                <a href="{% url 'cars:car_list' %}"
+                    class="btn btn-autohub-primary px-4 py-2 d-inline-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined fs-5">directions_car</span>
+                    <span>Browse Showroom</span>
+                </a>
+                <a href="{% url 'cars:compare' %}"
+                    class="btn btn-outline-secondary px-4 py-2 d-inline-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined fs-5">compare_arrows</span>
+                    <span>Compare Cars</span>
+                </a>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

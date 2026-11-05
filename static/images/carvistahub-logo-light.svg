@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 60" width="280" height="60" fill="none">
+    <defs>
+        <!-- Gradients -->
+        <linearGradient id="cvh-light-blue-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#60a5fa" />
+            <stop offset="100%" stop-color="#2563eb" />
+        </linearGradient>
+        <linearGradient id="cvh-light-cyan-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#38bdf8" />
+            <stop offset="100%" stop-color="#60a5fa" />
+        </linearGradient>
+        <linearGradient id="cvh-light-orange-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#fb923c" />
+            <stop offset="100%" stop-color="#ea580c" />
+        </linearGradient>
+    </defs>
+
+    <!-- LOGO ICON EMBLEM -->
+    <g transform="translate(6, 6)">
+        <!-- Outer Speedometer Ring / Gauge Arc -->
+        <path d="M 12 40 A 22 22 0 1 1 42 40" stroke="url(#cvh-light-blue-grad)" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="2 4" opacity="0.6" />
+        <path d="M 16 38 A 18 18 0 1 1 38 38" stroke="url(#cvh-light-cyan-grad)" stroke-width="3" stroke-linecap="round" />
+        
+        <!-- Speedometer Gauge Tick Marks -->
+        <line x1="27" y1="9" x2="27" y2="13" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" />
+        <line x1="16" y1="16" x2="19" y2="19" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" />
+        <line x1="38" y1="16" x2="35" y2="19" stroke="#fb923c" stroke-width="2" stroke-linecap="round" />
+
+        <!-- Speedometer Needle Gauge -->
+        <line x1="27" y1="27" x2="36" y2="17" stroke="url(#cvh-light-orange-grad)" stroke-width="2.5" stroke-linecap="round" />
+        <circle cx="27" cy="27" r="3.5" fill="#38bdf8" />
+        <circle cx="27" cy="27" r="1.5" fill="#ffffff" />
+
+        <!-- Aerodynamic Car Silhouette Body -->
+        <path d="M 4 38 C 10 37, 14 34, 18 30 C 23 23, 31 22, 38 27 C 44 31, 48 35, 52 38 C 50 38, 48 38, 46 38 C 45 35, 42 33, 39 33 C 36 33, 33 35, 32 38 L 22 38 C 21 35, 18 33, 15 33 C 12 33, 9 35, 8 38 Z" fill="url(#cvh-light-blue-grad)" />
+        
+        <!-- Aerodynamic Wind/Speed Streak -->
+        <path d="M 2 33 L 14 33" stroke="url(#cvh-light-cyan-grad)" stroke-width="2" stroke-linecap="round" opacity="0.9" />
+        <path d="M 6 29 L 16 29" stroke="url(#cvh-light-cyan-grad)" stroke-width="1.5" stroke-linecap="round" opacity="0.7" />
+
+        <!-- Wheel Wells / Wheels -->
+        <circle cx="15" cy="38" r="4.5" fill="#1e293b" />
+        <circle cx="15" cy="38" r="2" fill="#38bdf8" />
+        <circle cx="39" cy="38" r="4.5" fill="#1e293b" />
+        <circle cx="39" cy="38" r="2" fill="#38bdf8" />
+    </g>
+
+    <!-- TYPOGRAPHY WORDMARK (LIGHT/WHITE VERSION) -->
+    <g transform="translate(68, 38)">
+        <!-- "Car" -->
+        <text x="0" y="0" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="800" fill="#ffffff" letter-spacing="-0.5">Car</text>
+        
+        <!-- "Vista" -->
+        <text x="44" y="0" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="800" fill="url(#cvh-light-cyan-grad)" letter-spacing="-0.5">Vista</text>
+        
+        <!-- "Hub" Badge / Accent -->
+        <rect x="108" y="-22" width="56" height="26" rx="6" fill="#2563eb" />
+        <text x="136" y="-4" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="0.5">HUB</text>
+    </g>
+</svg>

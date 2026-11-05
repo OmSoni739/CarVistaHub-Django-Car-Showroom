@@ -1,0 +1,643 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Test Drive Records & Audit Logs | CarVistaHub Manager Portal{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light min-vh-100">
+    <div class="container-fluid autohub-container">
+        <!-- Page Header Breadcrumbs & Status -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1 fs-8">
+                        <li class="breadcrumb-item"><a href="{% url 'cars:home' %}" class="text-decoration-none">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard:manager_calendar' %}" class="text-decoration-none">Showroom Calendar</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Test Drive Records</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center gap-2">
+                    <h1 class="h3 fw-bold text-dark mb-0">Test Drive Records &amp; Audit Logs</h1>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-8">
+                        Manager Audit Trail
+                    </span>
+                </div>
+                <p class="text-muted fs-7 mb-0 mt-1">{{ subtitle }}</p>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="d-flex align-items-center gap-2">
+                <a href="{% url 'dashboard:manager_calendar' %}" class="btn btn-outline-primary d-inline-flex align-items-center gap-1 fs-7 shadow-xs">
+                    <span class="material-symbols-outlined fs-6">calendar_month</span>
+                    <span>Showroom Calendar</span>
+                </a>
+                <a href="{% url 'dashboard:manager_vehicle_reservations' %}" class="btn btn-outline-success d-inline-flex align-items-center gap-1 fs-7 shadow-xs">
+                    <span class="material-symbols-outlined fs-6">shopping_cart_checkout</span>
+                    <span>Vehicle Reservations</span>
+                </a>
+                <div class="d-none d-md-flex align-items-center gap-2 bg-white px-3 py-2 rounded-3 border shadow-sm fs-8">
+                    <span class="d-inline-block rounded-circle bg-success" style="width: 8px; height: 8px;"></span>
+                    <span class="text-muted">Manager:</span>
+                    <strong class="text-dark">
+                        {% if active_manager %}
+                            {{ active_manager.get_full_name|default:active_manager.username }}
+                        {% else %}
+                            {{ request.user.get_full_name|default:request.user.username }}
+                        {% endif %}
+                    </strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. Dynamically Calculated Summary Cards -->
+        <div class="row g-3 mb-4">
+            <!-- Total Activities -->
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fs-8 text-muted text-uppercase fw-semibold">Total Activities</span>
+                        <div class="rounded-circle bg-primary-subtle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <span class="material-symbols-outlined fs-6 text-primary">history</span>
+                        </div>
+                    </div>
+                    <div class="h3 fw-bold text-dark mb-0 font-monospace">{{ summary_stats.total_activities }}</div>
+                    <span class="fs-9 text-muted mt-1">Logged system &amp; user events</span>
+                </div>
+            </div>
+
+            <!-- Total Requests -->
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fs-8 text-muted text-uppercase fw-semibold">Total Requests</span>
+                        <div class="rounded-circle bg-warning-subtle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <span class="material-symbols-outlined fs-6 text-warning-emphasis">contact_mail</span>
+                        </div>
+                    </div>
+                    <div class="h3 fw-bold text-dark mb-0 font-monospace">{{ summary_stats.total_requests }}</div>
+                    <span class="fs-9 text-muted mt-1">Test drive submissions</span>
+                </div>
+            </div>
+
+            <!-- Confirmed Bookings -->
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fs-8 text-muted text-uppercase fw-semibold">Confirmed</span>
+                        <div class="rounded-circle bg-primary p-2 d-flex align-items-center justify-content-center text-white" style="width: 32px; height: 32px;">
+                            <span class="material-symbols-outlined fs-6">task_alt</span>
+                        </div>
+                    </div>
+                    <div class="h3 fw-bold text-dark mb-0 font-monospace">{{ summary_stats.confirmed_bookings }}</div>
+                    <span class="fs-9 text-muted mt-1">Locked showroom visits</span>
+                </div>
+            </div>
+
+            <!-- Rejected Bookings -->
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fs-8 text-muted text-uppercase fw-semibold">Rejected</span>
+                        <div class="rounded-circle bg-danger-subtle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <span class="material-symbols-outlined fs-6 text-danger">cancel</span>
+                        </div>
+                    </div>
+                    <div class="h3 fw-bold text-dark mb-0 font-monospace">{{ summary_stats.rejected_bookings }}</div>
+                    <span class="fs-9 text-muted mt-1">DL / policy rejections</span>
+                </div>
+            </div>
+
+            <!-- Cancelled Bookings -->
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fs-8 text-muted text-uppercase fw-semibold">Cancelled</span>
+                        <div class="rounded-circle bg-secondary-subtle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <span class="material-symbols-outlined fs-6 text-secondary">event_busy</span>
+                        </div>
+                    </div>
+                    <div class="h3 fw-bold text-dark mb-0 font-monospace">{{ summary_stats.cancelled_bookings }}</div>
+                    <span class="fs-9 text-muted mt-1">Customer cancellations</span>
+                </div>
+            </div>
+
+            <!-- Completed Test Drives -->
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fs-8 text-muted text-uppercase fw-semibold">Completed</span>
+                        <div class="rounded-circle bg-success-subtle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <span class="material-symbols-outlined fs-6 text-success">done_all</span>
+                        </div>
+                    </div>
+                    <div class="h3 fw-bold text-dark mb-0 font-monospace">{{ summary_stats.completed_test_drives }}</div>
+                    <span class="fs-9 text-muted mt-1">Concluded drive sessions</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Search & Filtering Card -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3">
+                <form method="GET" action="{% url 'dashboard:manager_records' %}" class="row g-2 align-items-center" id="recordsFilterForm">
+                    <!-- Search Input -->
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <span class="material-symbols-outlined fs-6">search</span>
+                            </span>
+                            <input type="text" name="q" class="form-control border-start-0 ps-0" placeholder="Search ref, customer, email, car..." value="{{ current_filters.q }}">
+                        </div>
+                    </div>
+
+                    <!-- Activity Type Filter -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <select name="activity_type" class="form-select form-select-sm fs-8 text-muted" aria-label="Filter by activity type">
+                            <option value="">All Activities</option>
+                            <option value="TEST_DRIVE_REQUESTED" {% if current_filters.activity_type == 'TEST_DRIVE_REQUESTED' %}selected{% endif %}>Test Drive Requested</option>
+                            <option value="LICENSE_VERIFIED" {% if current_filters.activity_type == 'LICENSE_VERIFIED' %}selected{% endif %}>Licence Verified</option>
+                            <option value="TEST_DRIVE_CONFIRMED" {% if current_filters.activity_type == 'TEST_DRIVE_CONFIRMED' %}selected{% endif %}>Test Drive Confirmed</option>
+                            <option value="LICENSE_REJECTED" {% if current_filters.activity_type == 'LICENSE_REJECTED' %}selected{% endif %}>Licence Rejected</option>
+                            <option value="TEST_DRIVE_REJECTED" {% if current_filters.activity_type == 'TEST_DRIVE_REJECTED' %}selected{% endif %}>Test Drive Rejected</option>
+                            <option value="TEST_DRIVE_CANCELLED" {% if current_filters.activity_type == 'TEST_DRIVE_CANCELLED' %}selected{% endif %}>Test Drive Cancelled</option>
+                            <option value="TEST_DRIVE_COMPLETED" {% if current_filters.activity_type == 'TEST_DRIVE_COMPLETED' %}selected{% endif %}>Test Drive Completed</option>
+                            <option value="BOOKING_EXPIRED" {% if current_filters.activity_type == 'BOOKING_EXPIRED' %}selected{% endif %}>Reservation Expired</option>
+                            <option value="SLOT_RESERVATION_RELEASED" {% if current_filters.activity_type == 'SLOT_RESERVATION_RELEASED' %}selected{% endif %}>Slot Released</option>
+                        </select>
+                    </div>
+
+                    <!-- Booking Status Filter -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <select name="booking_status" class="form-select form-select-sm fs-8 text-muted" aria-label="Filter by booking status">
+                            <option value="">All Booking Statuses</option>
+                            {% for code, label in booking_status_choices %}
+                                <option value="{{ code }}" {% if current_filters.booking_status == code %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Actor Filter -->
+                    <div class="col-6 col-md-4 col-lg-1">
+                        <select name="actor" class="form-select form-select-sm fs-8 text-muted" aria-label="Filter by actor">
+                            <option value="">All Actors</option>
+                            <option value="manager" {% if current_filters.actor == 'manager' %}selected{% endif %}>Manager</option>
+                            <option value="customer" {% if current_filters.actor == 'customer' %}selected{% endif %}>Customer</option>
+                            <option value="system" {% if current_filters.actor == 'system' %}selected{% endif %}>System</option>
+                        </select>
+                    </div>
+
+                    <!-- Date From Filter -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light fs-9 text-muted">From</span>
+                            <input type="date" name="date_from" class="form-control fs-8" value="{{ current_filters.date_from }}" title="From Date">
+                        </div>
+                    </div>
+
+                    <!-- Date To Filter -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light fs-9 text-muted">To</span>
+                            <input type="date" name="date_to" class="form-control fs-8" value="{{ current_filters.date_to }}" title="To Date">
+                        </div>
+                    </div>
+
+                    <!-- Filter Actions -->
+                    <div class="col-12 d-flex justify-content-end gap-2 mt-2 pt-2 border-top">
+                        <a href="{% url 'dashboard:manager_records' %}" class="btn btn-outline-secondary btn-sm px-3 d-inline-flex align-items-center gap-1 fs-8">
+                            <span class="material-symbols-outlined fs-7">restart_alt</span>
+                            <span>Clear Filters</span>
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-sm px-3 d-inline-flex align-items-center gap-1 fs-8 shadow-xs">
+                            <span class="material-symbols-outlined fs-7">filter_alt</span>
+                            <span>Apply Filters</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 3. Audit Log Table -->
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-4">
+            <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-primary fs-5">format_list_bulleted</span>
+                    <h6 class="fw-bold text-dark mb-0">Chronological Activity Log</h6>
+                    <span class="badge bg-light text-muted border fs-9">{{ page_obj.paginator.count }} Events</span>
+                </div>
+                <div class="fs-9 text-muted">
+                    Newest activities displayed first &bull; Append-only audit integrity active
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 fs-8">
+                    <thead class="table-light text-muted fs-9 text-uppercase">
+                        <tr>
+                            <th scope="col" class="ps-4 py-3" style="min-width: 150px;">Timestamp</th>
+                            <th scope="col" style="min-width: 140px;">Booking Ref</th>
+                            <th scope="col" style="min-width: 180px;">Customer</th>
+                            <th scope="col" style="min-width: 180px;">Vehicle</th>
+                            <th scope="col" style="min-width: 160px;">Activity</th>
+                            <th scope="col" style="min-width: 180px;">Appointment</th>
+                            <th scope="col" style="min-width: 150px;">Performed By</th>
+                            <th scope="col" class="text-end pe-4" style="min-width: 120px;">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if activities %}
+                            {% for act in activities %}
+                                <tr>
+                                    <!-- Timestamp -->
+                                    <td class="ps-4">
+                                        <div class="fw-semibold text-dark">{{ act.created_at|date:"d M Y" }}</div>
+                                        <div class="fs-9 text-muted font-monospace">{{ act.created_at|date:"h:i A" }}</div>
+                                    </td>
+
+                                    <!-- Booking Reference -->
+                                    <td>
+                                        <button type="button" class="btn btn-link p-0 text-decoration-none font-monospace fw-bold text-primary fs-8 text-start btn-view-timeline" data-booking-id="{{ act.booking.id }}" title="Click to view complete booking timeline">
+                                            {{ act.booking.booking_number }}
+                                        </button>
+                                        <div>
+                                            {% if act.booking.status == 'CONFIRMED' %}
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle fs-9">CONFIRMED</span>
+                                            {% elif act.booking.status == 'REJECTED' %}
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle fs-9">REJECTED</span>
+                                            {% elif act.booking.status == 'CANCELLED' %}
+                                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle fs-9">CANCELLED</span>
+                                            {% elif act.booking.status == 'COMPLETED' %}
+                                                <span class="badge bg-success text-white fs-9">COMPLETED</span>
+                                            {% elif act.booking.status == 'EXPIRED' %}
+                                                <span class="badge bg-secondary text-white fs-9">EXPIRED</span>
+                                            {% else %}
+                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fs-9">PENDING</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+
+                                    <!-- Customer -->
+                                    <td>
+                                        <div class="fw-bold text-dark text-truncate" style="max-width: 180px;">
+                                            {{ act.booking.customer.get_full_name|default:act.booking.customer.username }}
+                                        </div>
+                                        <div class="fs-9 text-muted text-truncate" style="max-width: 180px;">
+                                            {{ act.booking.customer.email }}
+                                        </div>
+                                    </td>
+
+                                    <!-- Vehicle -->
+                                    <td>
+                                        <div class="fw-semibold text-dark text-truncate" style="max-width: 180px;">
+                                            {% if act.booking.car.brand %}
+                                                {{ act.booking.car.brand.name }}
+                                            {% endif %}
+                                            {{ act.booking.car.title }}
+                                        </div>
+                                        <div class="fs-9 text-muted">Car ID: #{{ act.booking.car.id }}</div>
+                                    </td>
+
+                                    <!-- Activity Badge -->
+                                    <td>
+                                        <span class="{{ act.badge_class }} fs-8 py-1 px-2 d-inline-flex align-items-center gap-1">
+                                            <span class="material-symbols-outlined fs-9" style="font-size: 13px !important;">{{ act.timeline_icon }}</span>
+                                            <span>{{ act.activity_type_label }}</span>
+                                        </span>
+                                        {% if act.display_previous_status and act.display_previous_status != '—' and act.display_previous_status != act.display_new_status %}
+                                            <div class="fs-9 text-muted mt-1">
+                                                <span class="opacity-75">{{ act.display_previous_status }}</span>
+                                                <span class="material-symbols-outlined align-middle fs-9">trending_flat</span>
+                                                <span class="fw-bold text-dark">{{ act.display_new_status }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Appointment Date & Slot -->
+                                    <td>
+                                        <div class="text-dark fw-semibold">{{ act.booking.preferred_date|date:"D, d M Y" }}</div>
+                                        <div class="fs-9 text-muted d-flex align-items-center gap-1">
+                                            <span class="material-symbols-outlined fs-9">schedule</span>
+                                            <span>
+                                                {% if act.booking.start_time and act.booking.end_time %}
+                                                    {{ act.booking.start_time|time:"H:i" }} - {{ act.booking.end_time|time:"H:i" }}
+                                                {% else %}
+                                                    {{ act.booking.get_time_slot_display }}
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </td>
+
+                                    <!-- Performed By -->
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ act.actor_display_name }}</div>
+                                        <div class="fs-9 text-muted">
+                                            {% if act.actor_role == 'Showroom Manager' %}
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-9">Showroom Manager</span>
+                                            {% elif act.actor_role == 'Administrator' %}
+                                                <span class="badge bg-dark-subtle text-dark border fs-9">Administrator</span>
+                                            {% elif act.actor_role == 'Customer' %}
+                                                <span class="badge bg-light text-secondary border fs-9">Customer</span>
+                                            {% else %}
+                                                <span class="badge bg-light text-muted border fs-9">System Automation</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+
+                                    <!-- Details Action -->
+                                    <td class="text-end pe-4">
+                                        <button type="button" class="btn btn-outline-primary btn-sm px-2 py-1 fs-8 d-inline-flex align-items-center gap-1 shadow-xs btn-view-timeline" data-booking-id="{{ act.booking.id }}" title="Inspect full activity timeline for this booking">
+                                            <span class="material-symbols-outlined fs-7">timeline</span>
+                                            <span>Timeline</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle p-3 mb-2">
+                                        <span class="material-symbols-outlined fs-1 text-secondary">manage_search</span>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-1">No Activity Records Found</h6>
+                                    <p class="fs-8 text-muted mb-3">No audit records match your selected filter criteria.</p>
+                                    <a href="{% url 'dashboard:manager_records' %}" class="btn btn-sm btn-outline-primary">
+                                        Clear All Filters
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Toolbar -->
+            {% if page_obj.has_other_pages %}
+                <div class="card-footer bg-white py-3 px-4 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="fs-8 text-muted">
+                        Showing page <strong>{{ page_obj.number }}</strong> of <strong>{{ page_obj.paginator.num_pages }}</strong> ({{ page_obj.paginator.count }} total entries)
+                    </div>
+                    <nav aria-label="Audit log pagination">
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filter_querystring %}&{{ filter_querystring }}{% endif %}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo; Previous</span>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">&laquo; Previous</span>
+                                </li>
+                            {% endif %}
+
+                            {% for p in page_obj.paginator.page_range %}
+                                {% if p == page_obj.number %}
+                                    <li class="page-item active" aria-current="page">
+                                        <span class="page-link">{{ p }}</span>
+                                    </li>
+                                {% elif p >= page_obj.number|add:"-2" and p <= page_obj.number|add:"2" %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ p }}{% if filter_querystring %}&{{ filter_querystring }}{% endif %}">{{ p }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filter_querystring %}&{{ filter_querystring }}{% endif %}" aria-label="Next">
+                                        <span aria-hidden="true">Next &raquo;</span>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">Next &raquo;</span>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Modal: Complete Booking Activity Timeline -->
+<div class="modal fade" id="modalBookingTimeline" tabindex="-1" aria-labelledby="modalBookingTimelineLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header py-3 px-4 bg-primary text-white border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined fs-4">timeline</span>
+                    <div>
+                        <h6 class="modal-title fs-6 fw-bold mb-0 text-white" id="modalBookingTimelineLabel">Booking Activity Timeline</h6>
+                        <span class="fs-9 text-white-50" id="timelineBookingNumberSubtitle">Loading booking audit trail...</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Loading Spinner -->
+                <div id="timelineLoadingSpinner" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading timeline...</span>
+                    </div>
+                    <div class="fs-8 text-muted mt-2">Retrieving chronological audit history...</div>
+                </div>
+
+                <!-- Error Container -->
+                <div id="timelineErrorAlert" class="alert alert-danger py-2 px-3 fs-8 d-none mb-3"></div>
+
+                <!-- Timeline Content (Hidden while loading) -->
+                <div id="timelineContentWrapper" class="d-none">
+                    <!-- Booking Meta Summary Card -->
+                    <div class="bg-light border rounded-3 p-3 mb-4 fs-8">
+                        <div class="row g-2">
+                            <div class="col-sm-6">
+                                <span class="text-muted d-block fs-9">Vehicle:</span>
+                                <strong class="text-dark" id="timelineCarTitle">--</strong>
+                            </div>
+                            <div class="col-sm-6">
+                                <span class="text-muted d-block fs-9">Customer:</span>
+                                <strong class="text-dark" id="timelineCustomerName">--</strong>
+                                <span class="text-muted fs-9" id="timelineCustomerEmail"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <span class="text-muted d-block fs-9">Appointment Slot:</span>
+                                <strong class="text-dark" id="timelineSlotInfo">--</strong>
+                            </div>
+                            <div class="col-sm-6">
+                                <span class="text-muted d-block fs-9">Current Lifecycle Status:</span>
+                                <span id="timelineStatusBadge" class="badge bg-primary text-white fs-9">--</span>
+                            </div>
+                            <div class="col-12 d-none" id="timelineReasonRow">
+                                <span class="text-muted d-block fs-9" id="timelineReasonLabel">Reason:</span>
+                                <p class="text-dark bg-white border rounded p-2 mb-0 fs-8" id="timelineReasonText"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chronological Events List -->
+                    <h6 class="fw-bold text-dark fs-7 mb-3 d-flex align-items-center gap-2">
+                        <span class="material-symbols-outlined fs-6 text-primary">history_edu</span>
+                        <span>Chronological Lifecycle Events</span>
+                    </h6>
+
+                    <div class="timeline-container ps-3 border-start ms-3 position-relative" id="timelineEventsContainer">
+                        <!-- Dynamically populated timeline items -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2 px-4 bg-light border-top d-flex justify-content-between">
+                <span class="fs-9 text-muted">CarVistaHub Append-Only Audit Integrity System</span>
+                <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const timelineModalElem = document.getElementById('modalBookingTimeline');
+    let timelineModal = null;
+    if (timelineModalElem && typeof bootstrap !== 'undefined') {
+        timelineModal = bootstrap.Modal.getOrCreateInstance(timelineModalElem);
+    }
+
+    const spinner = document.getElementById('timelineLoadingSpinner');
+    const contentWrapper = document.getElementById('timelineContentWrapper');
+    const errorAlert = document.getElementById('timelineErrorAlert');
+
+    const carTitleElem = document.getElementById('timelineCarTitle');
+    const custNameElem = document.getElementById('timelineCustomerName');
+    const custEmailElem = document.getElementById('timelineCustomerEmail');
+    const slotInfoElem = document.getElementById('timelineSlotInfo');
+    const statusBadgeElem = document.getElementById('timelineStatusBadge');
+    const subtitleElem = document.getElementById('timelineBookingNumberSubtitle');
+    const reasonRowElem = document.getElementById('timelineReasonRow');
+    const reasonLabelElem = document.getElementById('timelineReasonLabel');
+    const reasonTextElem = document.getElementById('timelineReasonText');
+    const eventsContainer = document.getElementById('timelineEventsContainer');
+
+    async function loadBookingTimeline(bookingId) {
+        if (!timelineModal) return;
+
+        // Reset state
+        spinner.classList.remove('d-none');
+        contentWrapper.classList.add('d-none');
+        errorAlert.classList.add('d-none');
+        errorAlert.textContent = '';
+        eventsContainer.innerHTML = '';
+        subtitleElem.textContent = 'Loading booking audit trail...';
+
+        timelineModal.show();
+
+        try {
+            const res = await fetch(`/dashboard/manager/records/${bookingId}/timeline/`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok && data.success) {
+                const b = data.booking;
+                subtitleElem.textContent = `Ref: ${b.booking_number} • Created: ${b.created_at}`;
+                carTitleElem.textContent = b.car_title;
+                custNameElem.textContent = b.customer_name;
+                custEmailElem.textContent = b.customer_email ? `(${b.customer_email})` : '';
+                slotInfoElem.textContent = `${b.preferred_date} @ ${b.slot_time}`;
+                statusBadgeElem.textContent = b.status_display || b.status;
+
+                // Color code the current status badge
+                if (b.status === 'CONFIRMED') {
+                    statusBadgeElem.className = 'badge bg-success text-white fs-9';
+                } else if (b.status === 'REJECTED') {
+                    statusBadgeElem.className = 'badge bg-danger text-white fs-9';
+                } else if (b.status === 'CANCELLED') {
+                    statusBadgeElem.className = 'badge bg-secondary text-white fs-9';
+                } else if (b.status === 'COMPLETED') {
+                    statusBadgeElem.className = 'badge bg-success text-white fs-9';
+                } else {
+                    statusBadgeElem.className = 'badge bg-warning text-dark fs-9';
+                }
+
+                if (b.rejection_reason) {
+                    reasonLabelElem.textContent = 'Rejection Reason:';
+                    reasonTextElem.textContent = b.rejection_reason;
+                    reasonRowElem.classList.remove('d-none');
+                } else if (b.cancellation_reason) {
+                    reasonLabelElem.textContent = 'Cancellation Reason:';
+                    reasonTextElem.textContent = b.cancellation_reason;
+                    reasonRowElem.classList.remove('d-none');
+                } else {
+                    reasonRowElem.classList.add('d-none');
+                }
+
+                // Render events
+                const events = data.timeline || [];
+                if (events.length === 0) {
+                    eventsContainer.innerHTML = '<div class="text-muted fs-8 py-3">No activity logs recorded for this booking.</div>';
+                } else {
+                    events.forEach(evt => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'timeline-item mb-4 position-relative ps-4';
+
+                        itemDiv.innerHTML = `
+                            <div class="position-absolute start-0 top-0 translate-middle-x rounded-circle bg-white border border-2 border-primary d-flex align-items-center justify-content-center shadow-xs" style="width: 26px; height: 26px; margin-left: -1px;">
+                                <span class="material-symbols-outlined fs-7 text-primary" style="font-size: 14px !important;">${evt.icon || 'circle'}</span>
+                            </div>
+                            <div class="card border-0 bg-light p-3 rounded-3 shadow-xs">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="${evt.badge_class || 'badge bg-primary text-white'} fs-9">${evt.action_label}</span>
+                                        <span class="fw-bold text-dark fs-8">${evt.actor_name}</span>
+                                        <span class="badge bg-light text-muted border fs-9">${evt.actor_role}</span>
+                                    </div>
+                                    <div class="fs-9 text-muted font-monospace">${evt.timestamp}</div>
+                                </div>
+                                ${evt.previous_status && evt.previous_status !== '—' && evt.previous_status !== evt.new_status ? `
+                                    <div class="fs-9 text-muted mb-2">
+                                        <span class="opacity-75">Status transitioned:</span> 
+                                        <span class="badge bg-light text-secondary border fs-9">${evt.previous_status}</span> 
+                                        &rarr; 
+                                        <span class="badge bg-light text-dark border fw-bold fs-9">${evt.new_status}</span>
+                                    </div>
+                                ` : ''}
+                                <p class="fs-8 text-dark mb-0">${evt.notes || 'No extra notes recorded.'}</p>
+                            </div>
+                        `;
+                        eventsContainer.appendChild(itemDiv);
+                    });
+                }
+
+                spinner.classList.add('d-none');
+                contentWrapper.classList.remove('d-none');
+            } else {
+                spinner.classList.add('d-none');
+                errorAlert.textContent = data.error || 'Failed to retrieve booking timeline data.';
+                errorAlert.classList.remove('d-none');
+            }
+        } catch (err) {
+            spinner.classList.add('d-none');
+            errorAlert.textContent = `Network error: ${err.message}`;
+            errorAlert.classList.remove('d-none');
+        }
+    }
+
+    // Bind all timeline buttons
+    document.querySelectorAll('.btn-view-timeline').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const bookingId = btn.getAttribute('data-booking-id');
+            if (bookingId) {
+                loadBookingTimeline(bookingId);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+

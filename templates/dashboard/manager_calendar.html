@@ -1,0 +1,506 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Showroom Calendar | CarVistaHub Manager Portal{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light min-vh-100">
+    <div class="container-fluid autohub-container">
+        <!-- Page Header Breadcrumbs & Status -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1 fs-8">
+                        <li class="breadcrumb-item"><a href="{% url 'cars:home' %}" class="text-decoration-none">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Showroom Calendar</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center gap-2">
+                    <h1 class="h3 fw-bold text-dark mb-0">Showroom Test Drive Calendar</h1>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-8">
+                        Manager Control Center
+                    </span>
+                </div>
+            </div>
+
+            <!-- Manager Meta & Live Sync -->
+            <div class="d-flex align-items-center gap-2">
+                <a href="{% url 'dashboard:manager_records' %}" class="btn btn-outline-primary d-inline-flex align-items-center gap-1 fs-7 shadow-xs" title="View complete audit trail of test drive requests and manager actions">
+                    <span class="material-symbols-outlined fs-6">history_edu</span>
+                    <span>Test Drive Records</span>
+                </a>
+                <a href="{% url 'dashboard:manager_vehicle_reservations' %}" class="btn btn-outline-success d-inline-flex align-items-center gap-1 fs-7 shadow-xs" title="View customer online vehicle advance reservations">
+                    <span class="material-symbols-outlined fs-6">shopping_cart_checkout</span>
+                    <span>Vehicle Reservations</span>
+                </a>
+                <div class="text-end d-none d-md-block">
+                    <div class="fs-8 text-muted">Assigned Manager</div>
+                    <div class="fw-bold text-dark fs-7">
+                        {% if active_manager %}
+                            {{ active_manager.get_full_name|default:active_manager.username }}
+                        {% else %}
+                            <span class="text-danger fw-semibold">No Active Manager Configured</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-3 border shadow-sm fs-8">
+                    <span class="d-inline-block rounded-circle bg-success" style="width: 8px; height: 8px;"></span>
+                    <span id="mgrSyncStatusText" class="text-muted">Sync: 30s</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fs-8 ms-1 d-flex align-items-center" id="mgrManualRefreshBtn" title="Refresh Live Availability">
+                        <span class="material-symbols-outlined fs-6">refresh</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% if not active_manager %}
+            <div class="alert alert-warning d-flex align-items-center gap-2 mb-4" role="alert">
+                <span class="material-symbols-outlined fs-4 text-warning">warning</span>
+                <div>
+                    <strong>Administrative Notice:</strong> No active Showroom Manager account is currently registered. Customer test drive requests require an active Manager. Please configure a Manager account in the <a href="{% url 'admin:index' %}" class="alert-link">Django Admin</a>.
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Calendar Navigation Toolbar -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <!-- Date Steppers -->
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-secondary py-2 px-3 d-flex align-items-center gap-1" id="mgrPrevDayBtn">
+                            <span class="material-symbols-outlined fs-6">chevron_left</span>
+                            <span class="d-none d-sm-inline">Previous Day</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary py-2 px-3 fw-semibold" id="mgrTodayBtn">
+                            Today
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary py-2 px-3 d-flex align-items-center gap-1" id="mgrNextDayBtn">
+                            <span class="d-none d-sm-inline">Next Day</span>
+                            <span class="material-symbols-outlined fs-6">chevron_right</span>
+                        </button>
+                    </div>
+
+                    <!-- Date Picker & Selected Day Indicator -->
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0">
+                                <span class="material-symbols-outlined fs-6 text-muted">calendar_today</span>
+                            </span>
+                            <input type="date" class="form-control border-start-0 ps-0 fw-semibold" id="mgrDateInput" value="{{ today }}">
+                        </div>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="d-flex align-items-center gap-3 fs-8 text-muted">
+                        <span class="d-flex align-items-center gap-1">
+                            <span class="d-inline-block rounded-circle bg-success" style="width: 8px; height: 8px;"></span>
+                            Available
+                        </span>
+                        <span class="d-flex align-items-center gap-1">
+                            <span class="d-inline-block rounded-circle bg-warning" style="width: 8px; height: 8px;"></span>
+                            Pending
+                        </span>
+                        <span class="d-flex align-items-center gap-1">
+                            <span class="d-inline-block rounded-circle bg-primary" style="width: 8px; height: 8px;"></span>
+                            Booked
+                        </span>
+                        <span class="d-flex align-items-center gap-1">
+                            <span class="d-inline-block rounded-circle bg-secondary" style="width: 8px; height: 8px;"></span>
+                            Closed/Break
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 7-Day Rolling View (Primary Default View) -->
+                <div class="mt-3 pt-3 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="fs-8 text-muted fw-semibold d-flex align-items-center gap-1">
+                        <span class="material-symbols-outlined fs-7 text-primary">view_week</span>
+                        <span>Rolling 7-Day Window (Primary View):</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-1 overflow-auto" id="mgr7DayQuickStrip" style="scrollbar-width: thin;">
+                        <!-- 7 days quick buttons generated dynamically by calendar.js -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Showroom Schedule & Booking Inspection Grid -->
+        <div class="row g-4">
+            <!-- Left: Day Slot List (8 One-Hour Appointment Slots) -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                        <div>
+                            <h2 class="h6 fw-bold text-dark mb-0" id="mgrActiveDayHeader">Appointments Schedule</h2>
+                            <p class="fs-8 text-muted mb-0" id="mgrActiveDaySubheader">1-Hour Showroom Test Drive Slots</p>
+                        </div>
+                        <div class="d-flex gap-2" id="mgrDayStatsPills">
+                            <!-- Populated dynamically: badges for total, available, booked -->
+                        </div>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <!-- Alert container -->
+                        <div id="mgrAlertContainer" class="d-none mb-3"></div>
+
+                        <!-- Slots List -->
+                        <div class="d-flex flex-column gap-3" id="mgrSlotsContainer">
+                            <!-- Populated dynamically by calendar.js -->
+                            <div class="text-center py-5 text-muted">
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                <span>Loading showroom availability...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Booking Inspector Drawer / Detail Card -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-3 sticky-top" style="top: 90px;">
+                    <div class="card-header bg-white py-3 px-4 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="material-symbols-outlined text-primary fs-5">badge</span>
+                            <h3 class="h6 fw-bold text-dark mb-0">Booking Details Inspector</h3>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-4" id="mgrInspectorBody">
+                        <div class="text-center py-5 text-muted" id="mgrInspectorPlaceholder">
+                            <span class="material-symbols-outlined text-muted fs-1 mb-2">touch_app</span>
+                            <p class="fs-7 mb-0">Select any occupied or pending appointment slot to inspect customer and vehicle booking details.</p>
+                        </div>
+
+                        <!-- Inspector Details View (Hidden by default until slot clicked) -->
+                        <div class="d-none" id="mgrInspectorContent">
+                            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                                <div>
+                                    <span class="fs-8 text-muted">Reference ID</span>
+                                    <div class="fw-bold text-dark fs-7" id="inspectBookingNumber">--</div>
+                                </div>
+                                <span class="badge bg-warning text-dark px-2 py-1 fs-8" id="inspectStatusBadge">PENDING</span>
+                            </div>
+
+                            <div class="mb-3">
+                                <span class="fs-8 text-muted d-block mb-1">Customer Information</span>
+                                <div class="p-3 bg-light rounded-3">
+                                    <div class="fw-bold text-dark" id="inspectCustomerName">--</div>
+                                    <div class="fs-8 text-muted d-flex align-items-center gap-1 mt-1">
+                                        <span class="material-symbols-outlined fs-7">mail</span>
+                                        <span id="inspectCustomerEmail">--</span>
+                                    </div>
+                                    <div class="fs-8 text-muted d-flex align-items-center gap-1 mt-1">
+                                        <span class="material-symbols-outlined fs-7">call</span>
+                                        <span id="inspectCustomerPhone">--</span>
+                                    </div>
+                                    <div class="fs-8 text-muted d-flex align-items-center gap-1 mt-1">
+                                        <span class="material-symbols-outlined fs-7">badge</span>
+                                        <span>Status: <strong id="inspectCustomerLicenseStatus">--</strong></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Driving Licence Visual Review Section -->
+                            <div class="mb-3" id="inspectLicenseSection">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <span class="fs-8 text-muted fw-semibold">View Driving Licence (Front Side)</span>
+                                    <span class="badge bg-warning text-dark px-2 py-1 fs-9" id="inspectLicenseBadge">Pending Review</span>
+                                </div>
+                                <div class="p-3 bg-light rounded-3 border">
+                                    <!-- Image Preview Thumbnail & Enlarge Button -->
+                                    <div id="inspectLicenseImgContainer" class="text-center">
+                                        <div class="border rounded-2 p-1 bg-white d-inline-block shadow-xs mb-2 overflow-hidden position-relative" style="max-height: 140px; max-width: 100%;">
+                                            <img src="" alt="Driving Licence Front" id="inspectLicenseImg" class="img-fluid rounded" style="max-height: 130px; object-fit: contain; cursor: pointer;">
+                                        </div>
+                                        <div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary fs-8 py-1 px-3 d-inline-flex align-items-center gap-1" id="btnEnlargeLicense">
+                                                <span class="material-symbols-outlined fs-6">zoom_in</span>
+                                                <span>View &amp; Enlarge Document</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="inspectNoLicenseNotice" class="text-center text-muted py-3 fs-8 d-none">
+                                        <span class="material-symbols-outlined fs-3 text-secondary d-block mb-1">image_not_supported</span>
+                                        <span>No licence photo uploaded for this booking.</span>
+                                    </div>
+
+                                    <!-- Manager Document Action Buttons -->
+                                    <div id="inspectLicenseActions" class="mt-3 pt-2 border-top">
+                                        <div class="fs-9 text-muted mb-2 text-uppercase fw-semibold">Manager Review Actions (Stage 1)</div>
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-sm btn-success flex-fill d-flex align-items-center justify-content-center gap-1 py-2" id="btnVerifyDoc">
+                                                <span class="material-symbols-outlined fs-6">check_circle</span>
+                                                <span>Verify Document</span>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger flex-fill d-flex align-items-center justify-content-center gap-1 py-2" id="btnRejectDoc">
+                                                <span class="material-symbols-outlined fs-6">cancel</span>
+                                                <span>Reject Document</span>
+                                            </button>
+                                        </div>
+                                        <div id="licenseActionAlert" class="mt-2 fs-8 d-none"></div>
+                                    </div>
+
+                                    <!-- Manager Final Confirmation Button (Stage 2) -->
+                                    <div id="inspectConfirmSection" class="mt-3 pt-2 border-top d-none">
+                                        <div class="fs-9 text-muted mb-2 text-uppercase fw-semibold">Final Appointment Action (Stage 2)</div>
+                                        <button type="button" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2 py-2 shadow-xs fw-semibold" id="btnConfirmTestDrive">
+                                            <span class="material-symbols-outlined fs-6">task_alt</span>
+                                            <span>Confirm Driving Test</span>
+                                        </button>
+                                        <div class="fs-9 text-muted text-center mt-1">Driving licence verified. Ready for final showroom appointment confirmation.</div>
+                                        <div id="confirmActionAlert" class="mt-2 fs-8 d-none"></div>
+                                    </div>
+
+                                    <!-- Manager Confirmed Notice & Complete Action -->
+                                    <div id="inspectConfirmedNotice" class="mt-3 pt-2 border-top d-none">
+                                        <div class="alert alert-success py-2 px-3 fs-8 mb-2 d-flex align-items-center gap-2 rounded-3">
+                                            <span class="material-symbols-outlined fs-6 text-success flex-shrink-0">task_alt</span>
+                                            <div>
+                                                <strong>Appointment Confirmed:</strong> Test-drive booking is confirmed and showroom slot is locked permanently.
+                                            </div>
+                                        </div>
+                                        <div id="inspectCompleteActionContainer" class="mt-2">
+                                            <button type="button" class="btn btn-outline-success btn-sm w-100 d-flex align-items-center justify-content-center gap-1 py-2 fw-semibold" id="btnCompleteTestDrive">
+                                                <span class="material-symbols-outlined fs-6">done_all</span>
+                                                <span>Mark as Completed</span>
+                                            </button>
+                                            <div class="fs-9 text-muted text-center mt-1" id="completeActionHint">Available after the scheduled appointment time concludes.</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Manager Completed Notice -->
+                                    <div id="inspectCompletedNotice" class="mt-3 pt-2 border-top d-none">
+                                        <div class="alert alert-secondary py-2 px-3 fs-8 mb-0 d-flex align-items-center gap-2 rounded-3">
+                                            <span class="material-symbols-outlined fs-6 text-secondary flex-shrink-0">check_circle</span>
+                                            <div>
+                                                <strong>Appointment Completed:</strong> Showroom test drive has been conducted and concluded.
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Manager Rejected Notice -->
+                                    <div id="inspectRejectedNotice" class="mt-3 pt-2 border-top d-none">
+                                        <div class="alert alert-danger py-2 px-3 fs-8 mb-0 d-flex align-items-center gap-2 rounded-3">
+                                            <span class="material-symbols-outlined fs-6 text-danger flex-shrink-0">cancel</span>
+                                            <div>
+                                                <strong>Appointment Rejected:</strong> Booking was rejected and showroom slot was released.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <span class="fs-8 text-muted d-block mb-1">Vehicle Specification</span>
+                                <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <div class="fw-bold text-dark" id="inspectCarTitle">--</div>
+                                        <span class="fs-8 text-muted">Showroom Test Drive Unit</span>
+                                    </div>
+                                    <span class="material-symbols-outlined text-primary fs-3">directions_car</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <span class="fs-8 text-muted d-block mb-1">Appointment Slot</span>
+                                <div class="p-2 px-3 bg-light rounded-3 d-flex align-items-center justify-content-between fs-8">
+                                    <span class="fw-semibold text-dark" id="inspectSlotTime">--</span>
+                                    <span class="text-muted" id="inspectSlotDate">--</span>
+                                </div>
+                            </div>
+
+                            <!-- Customer / Internal Notes -->
+                            <div class="mb-3" id="inspectNotesContainer">
+                                <span class="fs-8 text-muted d-block mb-1">Notes & Preferences</span>
+                                <p class="fs-8 text-dark bg-light p-2 rounded-2 mb-0" id="inspectNotesText">No customer notes provided.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Modal: Enlarged Driving Licence Inspection -->
+<div class="modal fade" id="modalEnlargeLicense" tabindex="-1" aria-labelledby="modalEnlargeLicenseLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header py-3 px-4 bg-light border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-primary fs-5">badge</span>
+                    <div>
+                        <h5 class="modal-title fs-6 fw-bold mb-0" id="modalEnlargeLicenseLabel">Driving Licence Inspection — Front Side</h5>
+                        <p class="fs-9 text-muted mb-0">Showroom Manager Visual Verification (Personal Data Confidential)</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center bg-dark bg-opacity-10">
+                <div class="alert alert-light border py-2 px-3 fs-8 mb-3 text-start d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-primary fs-6">fact_check</span>
+                    <span><strong>Manager Review Checklist:</strong> Inspect visible photograph, customer name, issue &amp; expiry dates, licence category, and overall image legibility.</span>
+                </div>
+                <div class="overflow-auto text-center" style="max-height: 65vh;">
+                    <img id="enlargedLicenseImg" src="" alt="Driving Licence Large Preview" class="img-fluid rounded shadow-sm" style="max-height: 60vh; width: auto; object-fit: contain;">
+                </div>
+            </div>
+            <div class="modal-footer py-2 px-4 bg-light border-top d-flex justify-content-between">
+                <span class="fs-9 text-muted">CarVistaHub Strict Role-Based Document Access Control</span>
+                <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Manager Decision Reason Prompt (Reject) -->
+<div class="modal fade" id="modalLicenseReason" tabindex="-1" aria-labelledby="modalLicenseReasonLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header py-3 px-4 bg-light border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-danger fs-5">cancel</span>
+                    <h6 class="modal-title fs-6 fw-bold mb-0 text-dark" id="modalLicenseReasonLabel">Reject Driving Licence &amp; Appointment</h6>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-warning py-2 px-3 fs-8 mb-3 d-flex align-items-start gap-2 rounded-3">
+                    <span class="material-symbols-outlined fs-6 text-warning flex-shrink-0 mt-1">warning</span>
+                    <div>
+                        Rejecting this document will transition the booking status to <strong>REJECTED</strong> and immediately release the reserved showroom appointment slot for other customers.
+                    </div>
+                </div>
+                <label for="mgrActionReasonInput" class="form-label fs-8 text-secondary mb-1" id="mgrReasonLabel">Mandatory Rejection Reason *</label>
+                <textarea class="form-control form-control-sm" id="mgrActionReasonInput" rows="3" placeholder="Provide clear reason for rejection (e.g. invalid document, expired licence, category mismatch)..."></textarea>
+                <div class="invalid-feedback fs-8" id="mgrReasonFeedback">A rejection reason is mandatory to reject the document and appointment.</div>
+            </div>
+            <div class="modal-footer py-2 px-4 bg-light border-top">
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger btn-sm px-4 d-inline-flex align-items-center gap-1 shadow-xs" id="btnSubmitLicenseReason">
+                    <span class="material-symbols-outlined fs-7">cancel</span>
+                    <span>Confirm Rejection &amp; Release Slot</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirm Driving Test Dialog (Stage 2) -->
+<div class="modal fade" id="modalConfirmTestDrive" tabindex="-1" aria-labelledby="modalConfirmTestDriveLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header py-3 px-4 bg-primary text-white border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined fs-5">task_alt</span>
+                    <h6 class="modal-title fs-6 fw-bold mb-0 text-white" id="modalConfirmTestDriveLabel">Confirm Driving Test Appointment</h6>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-light border py-2 px-3 fs-8 mb-3 d-flex align-items-start gap-2 rounded-3">
+                    <span class="material-symbols-outlined fs-6 text-primary flex-shrink-0 mt-1">info</span>
+                    <div>
+                        Confirming will finalize the test-drive appointment, lock the 1-hour showroom slot permanently without expiration, and dispatch an in-app confirmation notification to the customer.
+                    </div>
+                </div>
+                <div class="bg-light p-3 rounded-3 border mb-3 fs-8">
+                    <div class="d-flex justify-content-between mb-1 pb-1 border-bottom">
+                        <span class="text-muted">Booking Reference:</span>
+                        <strong class="font-monospace text-dark" id="modalConfirmBookingRef">--</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1 pb-1 border-bottom">
+                        <span class="text-muted">Customer Name:</span>
+                        <strong class="text-dark" id="modalConfirmCustName">--</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1 pb-1 border-bottom">
+                        <span class="text-muted">Vehicle:</span>
+                        <strong class="text-dark" id="modalConfirmCarTitle">--</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1 pb-1 border-bottom">
+                        <span class="text-muted">Date &amp; Time:</span>
+                        <strong class="text-dark" id="modalConfirmSlotTime">--</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Licence Verification:</span>
+                        <span class="badge bg-success text-white px-2 py-1 fs-9" id="modalConfirmLicenseStatus">VERIFIED</span>
+                    </div>
+                </div>
+                <p class="fs-8 text-muted mb-0">Are you sure you want to approve and confirm this showroom test drive?</p>
+            </div>
+            <div class="modal-footer py-2 px-4 bg-light border-top">
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm px-4 d-inline-flex align-items-center gap-1 shadow-xs fw-semibold" id="btnSubmitConfirmBooking">
+                    <span class="material-symbols-outlined fs-7">task_alt</span>
+                    <span>Yes, Confirm Test Drive</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Mark Test Drive Completed Dialog -->
+<div class="modal fade" id="modalCompleteTestDrive" tabindex="-1" aria-labelledby="modalCompleteTestDriveLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header py-3 px-4 bg-success text-white border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined fs-5">done_all</span>
+                    <h6 class="modal-title fs-6 fw-bold mb-0 text-white" id="modalCompleteTestDriveLabel">Mark Appointment as Completed</h6>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-light border py-2 px-3 fs-8 mb-3 d-flex align-items-start gap-2 rounded-3">
+                    <span class="material-symbols-outlined fs-6 text-success flex-shrink-0 mt-1">info</span>
+                    <div>
+                        Marking this test drive as <strong>COMPLETED</strong> indicates that the showroom visit and driving session have concluded. The customer's one-active-booking restriction will be lifted, allowing them to schedule future test drives.
+                    </div>
+                </div>
+                <div class="bg-light p-3 rounded-3 border mb-3 fs-8">
+                    <div class="d-flex justify-content-between mb-1 pb-1 border-bottom">
+                        <span class="text-muted">Booking Reference:</span>
+                        <strong class="font-monospace text-dark" id="modalCompleteBookingRef">--</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1 pb-1 border-bottom">
+                        <span class="text-muted">Customer Name:</span>
+                        <strong class="text-dark" id="modalCompleteCustName">--</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1 pb-1 border-bottom">
+                        <span class="text-muted">Vehicle:</span>
+                        <strong class="text-dark" id="modalCompleteCarTitle">--</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Date &amp; Slot:</span>
+                        <strong class="text-dark" id="modalCompleteSlotTime">--</strong>
+                    </div>
+                </div>
+                <p class="fs-8 text-muted mb-0">Confirm that this test-drive appointment has taken place and is now finished?</p>
+            </div>
+            <div class="modal-footer py-2 px-4 bg-light border-top">
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success btn-sm px-4 d-inline-flex align-items-center gap-1 shadow-xs fw-semibold" id="btnSubmitCompleteBooking">
+                    <span class="material-symbols-outlined fs-7">done_all</span>
+                    <span>Yes, Mark Completed</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/calendar.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.CarVistaCalendar) {
+        window.CarVistaCalendar.initManagerCalendar({
+            apiEndpoint: "{% url 'bookings:api_calendar_availability' %}",
+            initialDate: "{{ today }}"
+        });
+    }
+});
+</script>
+{% endblock %}
+

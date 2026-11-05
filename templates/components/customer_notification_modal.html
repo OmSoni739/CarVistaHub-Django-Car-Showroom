@@ -1,0 +1,122 @@
+{% if customer_unread_notification %}
+<div class="modal fade" id="modalCustomerRejectionNotice" tabindex="-1" aria-labelledby="modalCustomerRejectionNoticeLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" data-notification-id="{{ customer_unread_notification.id }}">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            {% if customer_unread_notification.notification_type == 'BOOKING_CONFIRMED' %}
+                <!-- Stage 2 Confirmed Notification Header -->
+                <div class="modal-header bg-success text-white py-3 px-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="material-symbols-outlined fs-3">task_alt</span>
+                        <div>
+                            <h5 class="modal-title fs-6 fw-bold mb-0" id="modalCustomerRejectionNoticeLabel">Test Drive Confirmed!</h5>
+                            <span class="fs-9 text-white-50">Appointment Status: Confirmed</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="btnDismissNotificationX"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="text-center mb-3">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-success-subtle text-success rounded-circle p-3 mb-2">
+                            <span class="material-symbols-outlined fs-1">check_circle</span>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-1">Test Drive Confirmed!</h5>
+                        <p class="fs-8 text-muted mb-0">Your Driving Licence has been reviewed and your test-drive appointment has been confirmed by the Showroom Manager.</p>
+                    </div>
+
+                    <div class="bg-light rounded-3 p-3 mb-3 border">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 fs-8">
+                            <span class="text-muted">Booking Reference:</span>
+                            <strong class="font-monospace text-dark">{{ customer_unread_notification.booking_reference }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 fs-8">
+                            <span class="text-muted">Vehicle Name:</span>
+                            <strong class="text-dark">{{ customer_unread_notification.car_title }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 fs-8">
+                            <span class="text-muted">Appointment Date &amp; Time:</span>
+                            <strong class="text-dark">
+                                {{ customer_unread_notification.slot_date|date:"D, d M Y" }} ({{ customer_unread_notification.slot_time }})
+                            </strong>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 fs-8">
+                            <span class="text-muted">Showroom Location:</span>
+                            <strong class="text-dark">{{ customer_unread_notification.showroom_location|default:"CarVistaHub Showroom" }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center fs-8">
+                            <span class="text-muted">Confirmation Status:</span>
+                            <span class="badge bg-success text-white">CONFIRMED</span>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-success py-2 px-3 fs-8 mb-0 d-flex align-items-start gap-2">
+                        <span class="material-symbols-outlined fs-6 text-success flex-shrink-0 mt-1">verified</span>
+                        <div>
+                            <strong>Appointment Locked:</strong> Your showroom test-drive appointment is locked. Please arrive 10 minutes prior to your slot and bring your original driving licence.
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Rejection Notification Header -->
+                <div class="modal-header bg-danger text-white py-3 px-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="material-symbols-outlined fs-3">event_busy</span>
+                        <div>
+                            <h5 class="modal-title fs-6 fw-bold mb-0" id="modalCustomerRejectionNoticeLabel">Test Drive Request Update</h5>
+                            <span class="fs-9 text-white-50">Appointment Request Status: Rejected</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="btnDismissNotificationX"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="text-center mb-3">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-danger-subtle text-danger rounded-circle p-3 mb-2">
+                            <span class="material-symbols-outlined fs-1">cancel</span>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-1">Appointment Request Rejected</h5>
+                        <p class="fs-8 text-muted mb-0">Your test drive request could not be approved by the Showroom Manager.</p>
+                    </div>
+
+                    <div class="bg-light rounded-3 p-3 mb-3 border">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 fs-8">
+                            <span class="text-muted">Booking Reference:</span>
+                            <strong class="font-monospace text-dark">{{ customer_unread_notification.booking_reference }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 fs-8">
+                            <span class="text-muted">Vehicle Requested:</span>
+                            <strong class="text-dark">{{ customer_unread_notification.car_title }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 fs-8">
+                            <span class="text-muted">Requested Date &amp; Slot:</span>
+                            <strong class="text-dark">
+                                {{ customer_unread_notification.slot_date|date:"D, d M Y" }} ({{ customer_unread_notification.slot_time }})
+                            </strong>
+                        </div>
+                        <div class="mt-2">
+                            <span class="text-muted fs-8 d-block mb-1">Showroom Manager Rejection Reason:</span>
+                            <div class="p-2 bg-white rounded border border-danger-subtle text-danger fs-8 fw-semibold">
+                                {{ customer_unread_notification.rejection_reason }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning py-2 px-3 fs-8 mb-0 d-flex align-items-start gap-2">
+                        <span class="material-symbols-outlined fs-6 text-warning flex-shrink-0 mt-1">info</span>
+                        <div>
+                            <strong>Appointment Slot Released:</strong> The 1-hour showroom test drive slot reserved for this appointment has been immediately released back to the shared showroom schedule.
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="modal-footer py-3 px-4 bg-light border-top d-flex justify-content-between">
+                <a href="{% url 'dashboard:test_drive_appointments' %}" class="btn btn-outline-secondary btn-sm fs-8 py-2 px-3" id="btnNotificationViewHistory">
+                    <span class="material-symbols-outlined fs-7 align-middle">calendar_month</span>
+                    <span>View Test Drive Appointments</span>
+                </a>
+                <button type="button" class="btn btn-primary btn-sm fs-8 py-2 px-4 shadow-xs" data-bs-dismiss="modal" id="btnDismissNotificationAck">
+                    <span>Acknowledge &amp; Close</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

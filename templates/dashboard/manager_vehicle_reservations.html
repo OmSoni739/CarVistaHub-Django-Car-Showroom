@@ -1,0 +1,657 @@
+{% extends "base.html" %}
+{% load static %}
+{% load currency_tags %}
+
+{% block title %}Vehicle Reservation Records | CarVistaHub Manager Portal{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light min-vh-100">
+    <div class="container-fluid autohub-container">
+        <!-- Page Header Breadcrumbs & Status -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1 fs-8">
+                        <li class="breadcrumb-item"><a href="{% url 'cars:home' %}" class="text-decoration-none">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard:manager_calendar' %}" class="text-decoration-none">Showroom Calendar</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Vehicle Reservation Records</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <h1 class="h3 fw-bold text-dark mb-0">Vehicle Reservation Records</h1>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fs-8">
+                        Manager Audit Register
+                    </span>
+                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 fs-8">
+                        Read-Only Module
+                    </span>
+                </div>
+                <p class="text-muted fs-7 mb-0 mt-1">{{ subtitle }}</p>
+            </div>
+
+            <!-- Header Action Controls & Navigation -->
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <a href="{% url 'dashboard:manager_calendar' %}" class="btn btn-outline-primary d-inline-flex align-items-center gap-1 fs-7 shadow-xs">
+                    <span class="material-symbols-outlined fs-6">calendar_month</span>
+                    <span>Showroom Calendar</span>
+                </a>
+                <a href="{% url 'dashboard:manager_records' %}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1 fs-7 shadow-xs">
+                    <span class="material-symbols-outlined fs-6">history_edu</span>
+                    <span>Test Drive Records</span>
+                </a>
+                <div class="d-none d-md-flex align-items-center gap-2 bg-white px-3 py-2 rounded-3 border shadow-sm fs-8">
+                    <span class="d-inline-block rounded-circle bg-success" style="width: 8px; height: 8px;"></span>
+                    <span class="text-muted">Manager:</span>
+                    <strong class="text-dark">
+                        {% if active_manager %}
+                            {{ active_manager.get_full_name|default:active_manager.username }}
+                        {% else %}
+                            {{ request.user.get_full_name|default:request.user.username }}
+                        {% endif %}
+                    </strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. Dynamically Calculated Summary Cards -->
+        <div class="row g-3 mb-4">
+            <!-- Total Reservations -->
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fs-8 text-muted text-uppercase fw-semibold">Total Bookings</span>
+                        <div class="rounded-circle bg-primary-subtle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <span class="material-symbols-outlined fs-6 text-primary">shopping_cart_checkout</span>
+                        </div>
+                    </div>
+                    <div class="h3 fw-bold text-dark mb-0 font-monospace">{{ summary_stats.total_reservations }}</div>
+                    <span class="fs-9 text-muted mt-1">All vehicle orders</span>
+                </div>
+            </div>
+
+            <!-- Confirmed Reservations -->
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fs-8 text-muted text-uppercase fw-semibold">Confirmed</span>
+                        <div class="rounded-circle bg-success-subtle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <span class="material-symbols-outlined fs-6 text-success">task_alt</span>
+                        </div>
+                    </div>
+                    <div class="h3 fw-bold text-success mb-0 font-monospace">{{ summary_stats.confirmed_reservations }}</div>
+                    <span class="fs-9 text-muted mt-1">Active showroom holds</span>
+                </div>
+            </div>
+
+            <!-- Pending Allocations -->
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fs-8 text-muted text-uppercase fw-semibold">Allocation Review</span>
+                        <div class="rounded-circle bg-warning-subtle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <span class="material-symbols-outlined fs-6 text-warning-emphasis">hourglass_top</span>
+                        </div>
+                    </div>
+                    <div class="h3 fw-bold text-warning-emphasis mb-0 font-monospace">{{ summary_stats.pending_allocations }}</div>
+                    <span class="fs-9 text-muted mt-1">Paid; pending stock</span>
+                </div>
+            </div>
+
+            <!-- Payment Pending -->
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fs-8 text-muted text-uppercase fw-semibold">Payment Pending</span>
+                        <div class="rounded-circle bg-secondary-subtle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <span class="material-symbols-outlined fs-6 text-secondary">pending</span>
+                        </div>
+                    </div>
+                    <div class="h3 fw-bold text-secondary mb-0 font-monospace">{{ summary_stats.pending_payments }}</div>
+                    <span class="fs-9 text-muted mt-1">Awaiting checkout</span>
+                </div>
+            </div>
+
+            <!-- Cancelled Reservations -->
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fs-8 text-muted text-uppercase fw-semibold">Cancelled</span>
+                        <div class="rounded-circle bg-danger-subtle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <span class="material-symbols-outlined fs-6 text-danger">cancel</span>
+                        </div>
+                    </div>
+                    <div class="h3 fw-bold text-danger mb-0 font-monospace">{{ summary_stats.cancelled_reservations }}</div>
+                    <span class="fs-9 text-muted mt-1">Voided reservations</span>
+                </div>
+            </div>
+
+            <!-- Total Advance Collected -->
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fs-8 text-muted text-uppercase fw-semibold">Advance Revenue</span>
+                        <div class="rounded-circle bg-success p-2 d-flex align-items-center justify-content-center text-white" style="width: 32px; height: 32px;">
+                            <span class="material-symbols-outlined fs-6">payments</span>
+                        </div>
+                    </div>
+                    <div class="h4 fw-bold text-dark mb-0 font-monospace">₹{{ summary_stats.total_advance_collected|indian_currency }}</div>
+                    <span class="fs-9 text-success mt-1">Verified Gateway Capture</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Search & Filtering Toolbar (Strictly GET) -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-3 p-lg-4">
+                <form method="GET" action="{% url 'dashboard:manager_vehicle_reservations' %}" class="row g-3 align-items-end">
+                    <!-- Search Input -->
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <label for="searchQuery" class="form-label fs-8 text-muted fw-semibold mb-1">Search Reservations</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light border-end-0">
+                                <span class="material-symbols-outlined fs-6 text-muted">search</span>
+                            </span>
+                            <input type="text"
+                                   class="form-control border-start-0 fs-8"
+                                   id="searchQuery"
+                                   name="q"
+                                   value="{{ current_filters.q }}"
+                                   placeholder="Booking ID, customer, car, Razorpay ID...">
+                        </div>
+                    </div>
+
+                    <!-- Payment Status Filter -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <label for="paymentStatusFilter" class="form-label fs-8 text-muted fw-semibold mb-1">Payment Status</label>
+                        <select class="form-select form-select-sm fs-8" id="paymentStatusFilter" name="payment_status">
+                            <option value="">All Payment States</option>
+                            {% for value, label in payment_status_choices %}
+                                <option value="{{ value }}" {% if current_filters.payment_status == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Booking Status Filter -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <label for="bookingStatusFilter" class="form-label fs-8 text-muted fw-semibold mb-1">Reservation Status</label>
+                        <select class="form-select form-select-sm fs-8" id="bookingStatusFilter" name="booking_status">
+                            <option value="">All Reservation States</option>
+                            {% for value, label in booking_status_choices %}
+                                <option value="{{ value }}" {% if current_filters.booking_status == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Date From -->
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <label for="dateFrom" class="form-label fs-8 text-muted fw-semibold mb-1">Date From</label>
+                        <input type="date"
+                               class="form-control form-control-sm fs-8"
+                               id="dateFrom"
+                               name="date_from"
+                               value="{{ current_filters.date_from }}">
+                    </div>
+
+                    <!-- Date To -->
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <label for="dateTo" class="form-label fs-8 text-muted fw-semibold mb-1">Date To</label>
+                        <input type="date"
+                               class="form-control form-control-sm fs-8"
+                               id="dateTo"
+                               name="date_to"
+                               value="{{ current_filters.date_to }}">
+                    </div>
+
+                    <!-- Submit & Reset Buttons -->
+                    <div class="col-12 col-lg-1 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm fs-8 w-100 d-inline-flex align-items-center justify-content-center gap-1 shadow-xs" title="Apply Filters">
+                            <span class="material-symbols-outlined fs-6">filter_alt</span>
+                            <span>Filter</span>
+                        </button>
+                        {% if current_filters.q or current_filters.payment_status or current_filters.booking_status or current_filters.date_from or current_filters.date_to %}
+                            <a href="{% url 'dashboard:manager_vehicle_reservations' %}" class="btn btn-outline-secondary btn-sm fs-8 d-inline-flex align-items-center justify-content-center" title="Reset Filters">
+                                <span class="material-symbols-outlined fs-6">close</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 3. Reservations Register Table -->
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+            <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-primary fs-5">directions_car</span>
+                    <h5 class="fw-bold text-dark mb-0 fs-6">Customer Vehicle Advance Reservations</h5>
+                </div>
+                <span class="fs-8 text-muted">
+                    Showing <strong>{{ reservations|length }}</strong> of <strong>{{ page_obj.paginator.count }}</strong> recorded reservations
+                </span>
+            </div>
+
+            {% if reservations %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 fs-8">
+                        <thead class="table-light text-muted text-uppercase fs-9">
+                            <tr>
+                                <th scope="col" class="ps-4 py-3">Booking ID &amp; Date</th>
+                                <th scope="col" class="py-3">Customer Details</th>
+                                <th scope="col" class="py-3">Reserved Vehicle</th>
+                                <th scope="col" class="py-3">Advance Payment</th>
+                                <th scope="col" class="py-3">Reservation Status</th>
+                                <th scope="col" class="text-end pe-4 py-3">Inspection Dossier</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in reservations %}
+                                <tr>
+                                    <!-- Booking ID & Timestamp -->
+                                    <td class="ps-4">
+                                        <div class="fw-bold font-monospace text-dark fs-7">{{ r.booking_id }}</div>
+                                        <div class="text-muted fs-9 d-flex align-items-center gap-1 mt-1">
+                                            <span class="material-symbols-outlined fs-8">calendar_today</span>
+                                            <span>{{ r.created_at|date:"D, d M Y, h:i A" }}</span>
+                                        </div>
+                                    </td>
+
+                                    <!-- Customer Information -->
+                                    <td>
+                                        <div class="fw-semibold text-dark">
+                                            {{ r.customer.get_full_name|default:r.customer.username }}
+                                        </div>
+                                        <div class="text-muted fs-9 d-flex align-items-center gap-1 mt-1">
+                                            <span class="material-symbols-outlined fs-8">mail</span>
+                                            <span>{{ r.customer.email }}</span>
+                                        </div>
+                                        <div class="text-muted fs-9 d-flex align-items-center gap-1 mt-1">
+                                            <span class="material-symbols-outlined fs-8">call</span>
+                                            <span>{{ r.customer.phone_number|default:"No Contact Phone" }}</span>
+                                        </div>
+                                    </td>
+
+                                    <!-- Vehicle Information -->
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-2 overflow-hidden bg-light border flex-shrink-0" style="width: 50px; height: 36px;">
+                                                {% with p_img=r.car.images.first %}
+                                                    {% if p_img and p_img.image %}
+                                                        <img src="{{ p_img.image.url }}" alt="{{ r.car.title }}" class="w-100 h-100 object-fit-cover">
+                                                    {% else %}
+                                                        <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
+                                                            <span class="material-symbols-outlined fs-6">directions_car</span>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold text-dark">{{ r.car.title }}</div>
+                                                <div class="text-muted fs-9">{{ r.car.brand.name }} • Stock: <strong>{{ r.car.stock_quantity }}</strong></div>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Payment Information -->
+                                    <td>
+                                        <div class="fw-bold text-success fs-7">
+                                            ₹{{ r.booking_amount|indian_currency }}
+                                        </div>
+                                        <div class="mt-1">
+                                            {% if r.payment_status == 'PAID' %}
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                    ● Paid
+                                                </span>
+                                            {% elif r.payment_status == 'FAILED' %}
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                                    ● Failed
+                                                </span>
+                                            {% elif r.payment_status == 'REFUNDED' %}
+                                                <span class="badge bg-info-subtle text-info border border-info-subtle">
+                                                    ● Refunded
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                                    ● Pending
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        {% if r.payment and r.payment.razorpay_payment_id %}
+                                            <div class="text-muted fs-9 font-monospace mt-1">
+                                                ID: {{ r.payment.razorpay_payment_id }}
+                                            </div>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Reservation Status & Allocation -->
+                                    <td>
+                                        {% if r.booking_status == 'CONFIRMED' %}
+                                            <span class="badge bg-success text-white px-2 py-1">
+                                                CONFIRMED
+                                            </span>
+                                            <div class="text-success fs-9 mt-1">Vehicle Reserved</div>
+                                        {% elif r.booking_status == 'PENDING' and r.payment_status == 'PAID' %}
+                                            <span class="badge bg-warning text-dark px-2 py-1">
+                                                ALLOCATION IN PROGRESS
+                                            </span>
+                                            <div class="text-warning-emphasis fs-9 mt-1">Reviewing Allocation</div>
+                                        {% elif r.booking_status == 'DELIVERED' %}
+                                            <span class="badge bg-primary text-white px-2 py-1">
+                                                DELIVERED
+                                            </span>
+                                            <div class="text-primary fs-9 mt-1">Handover Complete</div>
+                                        {% elif r.booking_status == 'CANCELLED' %}
+                                            <span class="badge bg-secondary text-white px-2 py-1">
+                                                CANCELLED
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-subtle text-dark px-2 py-1">
+                                                {{ r.get_booking_status_display }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Inspect Dossier Button -->
+                                    <td class="text-end pe-4">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary fs-8 d-inline-flex align-items-center gap-1 shadow-xs"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalReservationDetails{{ r.id }}"
+                                                title="View complete read-only reservation details">
+                                            <span class="material-symbols-outlined fs-7">visibility</span>
+                                            <span>View Details</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Footer -->
+                {% if page_obj.has_other_pages %}
+                    <div class="card-footer bg-white border-top py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <span class="fs-8 text-muted">
+                            Page <strong>{{ page_obj.number }}</strong> of <strong>{{ page_obj.paginator.num_pages }}</strong>
+                        </span>
+                        <nav aria-label="Reservation Records Pagination">
+                            <ul class="pagination pagination-sm mb-0">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filter_querystring %}&{{ filter_querystring }}{% endif %}">
+                                            &laquo; Previous
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled"><span class="page-link">&laquo; Previous</span></li>
+                                {% endif %}
+
+                                {% for p_num in page_obj.paginator.page_range %}
+                                    {% if p_num == page_obj.number %}
+                                        <li class="page-item active" aria-current="page"><span class="page-link">{{ p_num }}</span></li>
+                                    {% elif p_num > page_obj.number|add:"-3" and p_num < page_obj.number|add:"3" %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ p_num }}{% if filter_querystring %}&{{ filter_querystring }}{% endif %}">
+                                                {{ p_num }}
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filter_querystring %}&{{ filter_querystring }}{% endif %}">
+                                            Next &raquo;
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled"><span class="page-link">Next &raquo;</span></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                {% endif %}
+
+            {% else %}
+                <!-- Empty State -->
+                <div class="p-5 text-center">
+                    <div class="py-4">
+                        <span class="material-symbols-outlined text-muted fs-1 mb-3">shopping_cart_checkout</span>
+                        <h4 class="fw-bold text-dark mb-2">No Vehicle Reservations Found</h4>
+                        <p class="text-muted fs-7 mb-4">
+                            {% if current_filters.q or current_filters.payment_status or current_filters.booking_status or current_filters.date_from or current_filters.date_to %}
+                                No reservation records match your active search or filter criteria. Try broadening your parameters.
+                            {% else %}
+                                There are currently no customer online vehicle advance reservations recorded in the system.
+                            {% endif %}
+                        </p>
+                        {% if current_filters.q or current_filters.payment_status or current_filters.booking_status or current_filters.date_from or current_filters.date_to %}
+                            <a href="{% url 'dashboard:manager_vehicle_reservations' %}" class="btn btn-outline-primary btn-sm px-4 py-2 shadow-xs d-inline-flex align-items-center gap-1">
+                                <span class="material-symbols-outlined fs-6">restart_alt</span>
+                                <span>Reset All Filters</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- 4. Read-Only Reservation Inspection Modals (One per reservation) -->
+{% for r in reservations %}
+<div class="modal fade" id="modalReservationDetails{{ r.id }}" tabindex="-1" aria-labelledby="modalReservationDetailsLabel{{ r.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <!-- Modal Header -->
+            <div class="modal-header bg-dark text-white py-3 px-4">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined fs-4 text-warning">receipt_long</span>
+                    <div>
+                        <h5 class="modal-title fs-6 fw-bold mb-0" id="modalReservationDetailsLabel{{ r.id }}">
+                            Reservation Dossier: {{ r.booking_id }}
+                        </h5>
+                        <span class="fs-9 text-white-50">Showroom Manager Audit Inspection (Strictly Read-Only)</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body p-4">
+                <!-- Section 1: Customer Profile -->
+                <div class="mb-4">
+                    <h6 class="fw-bold text-uppercase text-muted fs-8 tracking-wide mb-3 d-flex align-items-center gap-1">
+                        <span class="material-symbols-outlined fs-6 text-primary">person</span>
+                        <span>Customer Profile</span>
+                    </h6>
+                    <div class="bg-light p-3 rounded-3 border">
+                        <div class="row g-2 fs-8">
+                            <div class="col-6 col-md-3">
+                                <span class="text-muted d-block">Full Name</span>
+                                <strong class="text-dark">{{ r.customer.get_full_name|default:r.customer.username }}</strong>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <span class="text-muted d-block">Account Username</span>
+                                <strong class="text-dark font-monospace">{{ r.customer.username }}</strong>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <span class="text-muted d-block">Email Address</span>
+                                <strong class="text-dark text-break">{{ r.customer.email }}</strong>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <span class="text-muted d-block">Contact Phone</span>
+                                <strong class="text-dark">{{ r.customer.phone_number|default:"Not Provided" }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Vehicle Dossier -->
+                <div class="mb-4">
+                    <h6 class="fw-bold text-uppercase text-muted fs-8 tracking-wide mb-3 d-flex align-items-center gap-1">
+                        <span class="material-symbols-outlined fs-6 text-primary">directions_car</span>
+                        <span>Vehicle Dossier</span>
+                    </h6>
+                    <div class="bg-light p-3 rounded-3 border">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="rounded-3 overflow-hidden bg-white border flex-shrink-0" style="width: 80px; height: 56px;">
+                                {% with p_img=r.car.images.first %}
+                                    {% if p_img and p_img.image %}
+                                        <img src="{{ p_img.image.url }}" alt="{{ r.car.title }}" class="w-100 h-100 object-fit-cover">
+                                    {% else %}
+                                        <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
+                                            <span class="material-symbols-outlined fs-4">directions_car</span>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            <div>
+                                <span class="text-uppercase text-muted fs-9 fw-bold">{{ r.car.brand.name }}</span>
+                                <h5 class="fw-bold text-dark mb-0 fs-6">{{ r.car.title }}</h5>
+                                <span class="fs-9 text-muted">{{ r.car.get_body_type_display }} • {{ r.car.get_fuel_type_display }} • {{ r.car.get_transmission_display }}</span>
+                            </div>
+                        </div>
+                        <div class="row g-2 fs-8 pt-2 border-top">
+                            <div class="col-6 col-md-3">
+                                <span class="text-muted d-block">Showroom Stock Remaining</span>
+                                <strong class="text-dark">{{ r.car.stock_quantity }} units</strong>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <span class="text-muted d-block">Showroom Availability</span>
+                                {% if r.car.is_available %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Active / Available</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Sold Out / Inactive</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <span class="text-muted d-block">Ex-Showroom Price</span>
+                                <strong class="text-dark">₹{{ r.car.price|indian_currency }}</strong>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <span class="text-muted d-block">Seating Capacity</span>
+                                <strong class="text-dark">{{ r.car.seating_capacity }} Persons</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Financial & Gateway Information -->
+                <div class="mb-4">
+                    <h6 class="fw-bold text-uppercase text-muted fs-8 tracking-wide mb-3 d-flex align-items-center gap-1">
+                        <span class="material-symbols-outlined fs-6 text-primary">payments</span>
+                        <span>Financial &amp; Gateway Information</span>
+                    </h6>
+                    <div class="bg-light p-3 rounded-3 border">
+                        <div class="row g-3 fs-8">
+                            <div class="col-6 col-md-4">
+                                <span class="text-muted d-block">Advance Amount Paid</span>
+                                <strong class="text-success fs-6 d-flex align-items-center gap-1 mt-1">
+                                    ₹{{ r.booking_amount|indian_currency }}
+                                </strong>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <span class="text-muted d-block">Payment Status</span>
+                                <div class="mt-1">
+                                    {% if r.payment_status == 'PAID' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">● Verified (PAID)</span>
+                                    {% elif r.payment_status == 'FAILED' %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">● Failed</span>
+                                    {% else %}
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">● Pending</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <span class="text-muted d-block">Payment Method</span>
+                                <strong class="text-dark">{{ r.payment.payment_method|default:"Razorpay Standard Checkout" }}</strong>
+                            </div>
+
+                            <div class="col-12 col-md-6 pt-2 border-top">
+                                <span class="text-muted d-block">Razorpay Order ID</span>
+                                <strong class="text-dark font-monospace text-break">{{ r.payment.razorpay_order_id|default:"Not Available" }}</strong>
+                            </div>
+                            <div class="col-12 col-md-6 pt-2 border-top">
+                                <span class="text-muted d-block">Razorpay Payment ID (Transaction ID)</span>
+                                <strong class="text-dark font-monospace text-break">{{ r.payment.razorpay_payment_id|default:"Pending Gateway Verification" }}</strong>
+                            </div>
+
+                            <div class="col-6 col-md-6 pt-2 border-top">
+                                <span class="text-muted d-block">Payment Capture Timestamp</span>
+                                <span class="text-dark">{{ r.payment.paid_at|date:"D, d M Y, h:i:s A"|default:"Not Captured Yet" }}</span>
+                            </div>
+                            <div class="col-6 col-md-6 pt-2 border-top">
+                                <span class="text-muted d-block">Booking Order Timestamp</span>
+                                <span class="text-dark">{{ r.created_at|date:"D, d M Y, h:i:s A" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Operational Status & Allocation State -->
+                <div>
+                    <h6 class="fw-bold text-uppercase text-muted fs-8 tracking-wide mb-3 d-flex align-items-center gap-1">
+                        <span class="material-symbols-outlined fs-6 text-primary">fact_check</span>
+                        <span>Operational Status &amp; Allocation Information</span>
+                    </h6>
+                    <div class="p-3 rounded-3 border bg-white">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-muted fs-8">Current Reservation Status:</span>
+                            <span class="fw-bold fs-8">
+                                {% if r.booking_status == 'CONFIRMED' %}
+                                    <span class="badge bg-success text-white">RESERVATION CONFIRMED</span>
+                                {% elif r.booking_status == 'PENDING' and r.payment_status == 'PAID' %}
+                                    <span class="badge bg-warning text-dark">ALLOCATION IN PROGRESS</span>
+                                {% elif r.booking_status == 'DELIVERED' %}
+                                    <span class="badge bg-primary text-white">VEHICLE DELIVERED</span>
+                                {% elif r.booking_status == 'CANCELLED' %}
+                                    <span class="badge bg-secondary text-white">RESERVATION CANCELLED</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-dark">{{ r.get_booking_status_display }}</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="fs-8 text-muted">
+                            {% if r.booking_status == 'PENDING' and r.payment_status == 'PAID' %}
+                                <div class="alert alert-warning py-2 px-3 mb-0 fs-8 d-flex align-items-center gap-2">
+                                    <span class="material-symbols-outlined fs-6 text-warning-emphasis">info</span>
+                                    <span><strong>Allocation Under Review:</strong> Customer advance payment was securely verified and captured. Showroom operations should prioritize unit assignment from regional distribution or process refund if inventory remains unavailable.</span>
+                                </div>
+                            {% elif r.booking_status == 'CONFIRMED' %}
+                                <div class="alert alert-success py-2 px-3 mb-0 fs-8 d-flex align-items-center gap-2">
+                                    <span class="material-symbols-outlined fs-6 text-success">task_alt</span>
+                                    <span><strong>Reservation Active:</strong> Physical unit successfully held in showroom inventory. Assigned showroom relationship manager should coordinate customer documentation, financing, and delivery handover.</span>
+                                </div>
+                            {% elif r.booking_status == 'DELIVERED' %}
+                                <div class="alert alert-primary py-2 px-3 mb-0 fs-8 d-flex align-items-center gap-2">
+                                    <span class="material-symbols-outlined fs-6 text-primary">verified</span>
+                                    <span><strong>Handover Complete:</strong> Customer has taken delivery of the vehicle. All documentation and balance payments settled.</span>
+                                </div>
+                            {% else %}
+                                <span class="text-muted">Awaiting customer payment completion through Razorpay Standard Checkout gateway.</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer (Strictly Read-Only: Close Action Only) -->
+            <div class="modal-footer py-3 px-4 bg-light border-top d-flex justify-content-between align-items-center">
+                <span class="fs-9 text-muted d-flex align-items-center gap-1">
+                    <span class="material-symbols-outlined fs-7 text-secondary">lock</span>
+                    <span>Manager Read-Only Module — No modification actions permitted</span>
+                </span>
+                <button type="button" class="btn btn-secondary btn-sm fs-8 py-2 px-4 shadow-xs" data-bs-dismiss="modal">
+                    Close Dossier
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+

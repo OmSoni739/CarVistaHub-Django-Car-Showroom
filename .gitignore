@@ -1,0 +1,147 @@
+# ==============================================================================
+# CarVistaHub - .gitignore for Public GitHub Repository
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Environment Variables & Secret Configuration
+# ------------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ------------------------------------------------------------------------------
+# 2. SQLite Database & Local Database Backups
+# ------------------------------------------------------------------------------
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3.*
+*.db
+*.db-journal
+db.sqlite3
+db.sqlite3.*
+*.backup*
+*backup*.sqlite3
+
+# ------------------------------------------------------------------------------
+# 3. Project Archives & Compressed Backups
+# ------------------------------------------------------------------------------
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+CarVistaHub_backup*
+backup*
+
+# ------------------------------------------------------------------------------
+# 4. Private Customer Uploads & PII Documents
+# ------------------------------------------------------------------------------
+# Customer driving license uploads, ID verification records, and private media
+private_media/
+private_media/**/*
+media/licenses/
+media/customer_uploads/
+media/documents/
+media/temp/
+
+# ------------------------------------------------------------------------------
+# 5. Media & Static Handling
+# ------------------------------------------------------------------------------
+# Preserve public car catalog imagery and essential media markers
+!media/cars/
+!media/cars/**
+!media/.gitkeep
+
+# ------------------------------------------------------------------------------
+# 6. Python Virtual Environments, Bytecode & Build Artifacts
+# ------------------------------------------------------------------------------
+venv/
+env/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ------------------------------------------------------------------------------
+# 7. Testing, Code Coverage & Profiling
+# ------------------------------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# ------------------------------------------------------------------------------
+# 8. Local Development Scratch, Scripts & Temporary Exports
+# ------------------------------------------------------------------------------
+scratch/
+exports/
+temp/
+tmp/
+*.tmp
+*.bak
+*.bak_*
+
+# ------------------------------------------------------------------------------
+# 9. IDE, Editor & Workspace Temporary Files
+# ------------------------------------------------------------------------------
+.gemini/
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+*.iml
+
+# ------------------------------------------------------------------------------
+# 10. Logs & Diagnostics
+# ------------------------------------------------------------------------------
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ------------------------------------------------------------------------------
+# 11. Operating System Metadata
+# ------------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+

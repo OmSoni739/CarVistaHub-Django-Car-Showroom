@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Test Drive Appointments | CarVistaHub{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-light min-vh-75">
+    <div class="container py-3">
+        <!-- Page Header -->
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 pb-3 border-bottom">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1 fs-8">
+                        <li class="breadcrumb-item"><a href="{% url 'cars:home' %}" class="text-decoration-none">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Test Drive Appointments</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-primary fs-2">calendar_month</span>
+                    <span>My Test Drive Appointments</span>
+                </h1>
+                <p class="text-muted fs-7 mb-0">Review your scheduled showroom test drive appointments, licence verification status, and slot details.</p>
+            </div>
+            <div class="d-flex gap-2 mt-3 mt-md-0">
+                <a href="{% url 'dashboard:vehicle_reservations' %}" class="btn btn-outline-success btn-sm d-inline-flex align-items-center gap-1 shadow-xs">
+                    <span class="material-symbols-outlined fs-6">shopping_cart_checkout</span>
+                    <span>Vehicle Reservations</span>
+                </a>
+                <a href="{% url 'cars:car_list' %}" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1 shadow-xs">
+                    <span class="material-symbols-outlined fs-6">directions_car</span>
+                    <span>Browse Showroom Cars</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Test Drive Appointments Grid -->
+        {% if bookings %}
+            <div class="row g-4">
+                {% for b in bookings %}
+                    <div class="col-12 col-lg-6">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden d-flex flex-column">
+                            <!-- Card Header: Booking Number & Status Badge -->
+                            <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span class="fs-8 text-muted d-block">Booking Reference</span>
+                                    <span class="fw-bold text-dark fs-7 font-monospace">{{ b.booking_number }}</span>
+                                </div>
+                                <div>
+                                    {% if b.status == 'CONFIRMED' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fs-8">● Confirmed</span>
+                                    {% elif b.status == 'REJECTED' %}
+                                        <span class="badge bg-danger text-white px-2 py-1 fs-8">Request Rejected</span>
+                                    {% elif b.status == 'EXPIRED' %}
+                                        <span class="badge bg-secondary text-white px-2 py-1 fs-8">Expired</span>
+                                    {% elif b.status == 'CANCELLED' %}
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 fs-8">Cancelled</span>
+                                    {% elif b.status == 'COMPLETED' %}
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-8">Completed</span>
+                                    {% else %}
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 fs-8">Pending Manager Review</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Card Body: Vehicle & Appointment Details -->
+                            <div class="card-body p-4 flex-grow-1">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div>
+                                        <span class="text-uppercase text-muted fs-8 fw-bold">{{ b.car.brand.name }}</span>
+                                        <h5 class="fw-bold text-dark mb-0">{{ b.car.title }}</h5>
+                                        <span class="fs-8 text-muted">Showroom Test Drive (Complimentary)</span>
+                                    </div>
+                                    <a href="{% url 'cars:car_detail' slug=b.car.slug %}" class="btn btn-sm btn-outline-secondary fs-8 py-1 px-2 d-inline-flex align-items-center gap-1">
+                                        <span>View Car</span>
+                                        <span class="material-symbols-outlined fs-7">open_in_new</span>
+                                    </a>
+                                </div>
+
+                                <!-- Date & Slot Box -->
+                                <div class="bg-light p-3 rounded-3 mb-3">
+                                    <div class="row g-2 fs-8">
+                                        <div class="col-6">
+                                            <span class="text-muted d-block">Appointment Date</span>
+                                            <strong class="text-dark d-flex align-items-center gap-1 mt-1">
+                                                <span class="material-symbols-outlined fs-7 text-primary">event</span>
+                                                {{ b.preferred_date|date:"D, d M Y" }}
+                                            </strong>
+                                        </div>
+                                        <div class="col-6">
+                                            <span class="text-muted d-block">Time Slot</span>
+                                            <strong class="text-dark d-flex align-items-center gap-1 mt-1">
+                                                <span class="material-symbols-outlined fs-7 text-primary">schedule</span>
+                                                {% if b.start_time and b.end_time %}
+                                                    {{ b.start_time|time:"H:i" }} - {{ b.end_time|time:"H:i" }}
+                                                {% else %}
+                                                    {{ b.get_time_slot_display }}
+                                                {% endif %}
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Licence Verification Status -->
+                                <div class="mb-3 d-flex align-items-center justify-content-between fs-8 p-2 px-3 border rounded-3">
+                                    <span class="text-muted">Driving Licence Verification:</span>
+                                    {% if b.license_verification_status == 'VERIFIED' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                            <span class="material-symbols-outlined fs-8 align-middle">check_circle</span> Document Verified
+                                        </span>
+                                    {% elif b.license_verification_status == 'REJECTED' %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                            <span class="material-symbols-outlined fs-8 align-middle">cancel</span> Document Rejected
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                            <span class="material-symbols-outlined fs-8 align-middle">hourglass_top</span> Pending Review
+                                        </span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Confirmed Notice -->
+                                {% if b.status == 'CONFIRMED' %}
+                                    <div class="alert alert-success border-success-subtle py-2 px-3 fs-8 mb-3 rounded-3 d-flex align-items-center gap-2">
+                                        <span class="material-symbols-outlined text-success fs-5 flex-shrink-0">task_alt</span>
+                                        <div>
+                                            <strong>Appointment Confirmed:</strong> Your showroom test drive is confirmed. Please arrive 10 minutes prior to your slot and bring your original driving licence.
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Rejection Reason Alert Box -->
+                                {% if b.status == 'REJECTED' %}
+                                    <div class="alert alert-danger border-danger-subtle py-3 px-3 fs-8 mb-3 rounded-3">
+                                        <div class="d-flex align-items-start gap-2">
+                                            <span class="material-symbols-outlined text-danger fs-5 flex-shrink-0 mt-1">error</span>
+                                            <div>
+                                                <div class="fw-bold text-danger mb-1">Showroom Manager Rejection Reason:</div>
+                                                <p class="mb-2 text-dark bg-white p-2 rounded border border-danger-subtle">
+                                                    {{ b.rejection_reason|default:"The submitted driving licence did not satisfy verification criteria." }}
+                                                </p>
+                                                <div class="text-muted fs-9">
+                                                    <strong>Note:</strong> The appointment slot has been released back to the showroom schedule. You are welcome to submit a new test drive request with an updated document.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-end">
+                                        <a href="{% url 'cars:car_detail' slug=b.car.slug %}" class="btn btn-sm btn-primary py-1 px-3 fs-8 d-inline-flex align-items-center gap-1 shadow-xs">
+                                            <span class="material-symbols-outlined fs-7">replay</span>
+                                            <span>Book Another Slot</span>
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Card Footer: Actions -->
+                            <div class="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center">
+                                <a href="{% url 'cars:car_detail' slug=b.car.slug %}" class="btn btn-sm btn-outline-secondary fs-8 py-1 px-3 d-inline-flex align-items-center gap-1">
+                                    <span>Vehicle Details</span>
+                                    <span class="material-symbols-outlined fs-7">open_in_new</span>
+                                </a>
+                                {% if b.status == 'PENDING' or b.status == 'CONFIRMED' %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger fs-8 py-1 px-3 d-inline-flex align-items-center gap-1 btn-cancel-appointment" data-booking-id="{{ b.id }}" data-booking-number="{{ b.booking_number }}">
+                                        <span class="material-symbols-outlined fs-7">cancel</span>
+                                        <span>Cancel Appointment</span>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty State for Test Drives -->
+            <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+                <div class="py-4">
+                    <span class="material-symbols-outlined text-muted fs-1 mb-3">event_busy</span>
+                    <h4 class="fw-bold text-dark mb-2">No Test Drive Bookings Yet</h4>
+                    <p class="text-muted fs-7 mb-4">You have not scheduled any showroom appointments yet. Explore our vehicle catalog to choose your preferred car and schedule a free test drive.</p>
+                    <a href="{% url 'cars:car_list' %}" class="btn btn-primary px-4 py-2 shadow-xs d-inline-flex align-items-center gap-2">
+                        <span class="material-symbols-outlined fs-6">directions_car</span>
+                        <span>Explore Cars Now</span>
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+

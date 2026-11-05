@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% load static %}
+{% load currency_tags %}
+
+{% block title %}Booking Receipt — {{ booking.booking_id }} | CarVistaHub{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-light min-vh-75">
+    <div class="container py-3">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb fs-8">
+                <li class="breadcrumb-item"><a href="{% url 'cars:home' %}" class="text-decoration-none">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:vehicle_reservations' %}" class="text-decoration-none">Vehicle Reservations</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ booking.booking_id }}</li>
+            </ol>
+        </nav>
+
+        <!-- Status Banner -->
+        {% if is_allocation_pending %}
+            <div class="alert alert-warning border-warning-subtle shadow-sm rounded-4 p-4 mb-4">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="material-symbols-outlined text-warning-emphasis fs-1 flex-shrink-0 mt-1">hourglass_top</span>
+                    <div>
+                        <h4 class="fw-bold text-warning-emphasis mb-1">Payment Received — Vehicle Allocation In Progress</h4>
+                        <p class="mb-2 text-dark fs-7">
+                            <strong>Payment received. Your vehicle allocation is being reviewed by our showroom team.</strong>
+                        </p>
+                        <p class="mb-0 text-muted fs-8">
+                            Your advance payment of <strong>₹{{ booking.booking_amount|indian_currency }}</strong> has been verified and securely captured. Because inventory for this model reached zero during your checkout window, our showroom operations team has been notified to prioritize vehicle allocation from authorized regional stock or initiate a full refund upon your request.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-success border-success-subtle shadow-sm rounded-4 p-4 mb-4">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="material-symbols-outlined text-success fs-1 flex-shrink-0 mt-1">check_circle</span>
+                    <div>
+                        <h4 class="fw-bold text-success mb-1">Vehicle Advance Reservation Confirmed!</h4>
+                        <p class="mb-2 text-dark fs-7">
+                            Congratulations! Your advance booking fee of <strong>₹{{ booking.booking_amount|indian_currency }}</strong> has been verified and received.
+                        </p>
+                        <p class="mb-0 text-muted fs-8">
+                            One unit of <strong>{{ car.brand.name }} {{ car.title }}</strong> has been successfully reserved under your account. A dedicated CarVistaHub Showroom Relationship Manager will reach out to schedule documentation and delivery.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="row g-4">
+            <!-- Left Column: Vehicle Summary -->
+            <div class="col-12 col-lg-5">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
+                    <div class="position-relative bg-dark-subtle" style="height: 240px;">
+                        {% if primary_image and primary_image.image %}
+                            <img src="{{ primary_image.image.url }}" alt="{{ car.title }}" class="w-100 h-100 object-fit-cover">
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                                <span class="material-symbols-outlined fs-1">directions_car</span>
+                            </div>
+                        {% endif %}
+                        <div class="position-absolute top-0 end-0 m-3">
+                            <span class="badge bg-dark bg-opacity-75 text-white px-3 py-2 rounded-pill fs-8">
+                                {{ car.get_body_type_display }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-uppercase text-muted fw-bold fs-8 tracking-wide">{{ car.brand.name }}</span>
+                            <span class="badge {% if car.is_available %}bg-success-subtle text-success border border-success-subtle{% else %}bg-secondary-subtle text-secondary border border-secondary-subtle{% endif %} px-2 py-1 fs-9 rounded-pill">
+                                {% if car.is_available %}Active Model{% else %}Reserved Batch{% endif %}
+                            </span>
+                        </div>
+
+                        <h4 class="fw-bold text-dark mb-3">{{ car.title }}</h4>
+
+                        <!-- Vehicle Specs Grid -->
+                        <div class="bg-light p-3 rounded-3 mb-4">
+                            <div class="row g-2 fs-8">
+                                <div class="col-6">
+                                    <span class="text-muted d-block">Fuel Type</span>
+                                    <strong class="text-dark d-flex align-items-center gap-1 mt-1">
+                                        <span class="material-symbols-outlined fs-7 text-primary">local_gas_station</span>
+                                        {{ car.get_fuel_type_display }}
+                                    </strong>
+                                </div>
+                                <div class="col-6">
+                                    <span class="text-muted d-block">Transmission</span>
+                                    <strong class="text-dark d-flex align-items-center gap-1 mt-1">
+                                        <span class="material-symbols-outlined fs-7 text-primary">swap_driving_apps</span>
+                                        {{ car.get_transmission_display }}
+                                    </strong>
+                                </div>
+                                <div class="col-6">
+                                    <span class="text-muted d-block">Seating Capacity</span>
+                                    <strong class="text-dark d-flex align-items-center gap-1 mt-1">
+                                        <span class="material-symbols-outlined fs-7 text-primary">airline_seat_recline_normal</span>
+                                        {{ car.seating_capacity }} Seater
+                                    </strong>
+                                </div>
+                                <div class="col-6">
+                                    <span class="text-muted d-block">Mileage / Range</span>
+                                    <strong class="text-dark d-flex align-items-center gap-1 mt-1">
+                                        <span class="material-symbols-outlined fs-7 text-primary">speed</span>
+                                        {{ car.mileage }}
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Price Breakdown -->
+                        <h6 class="fw-bold text-dark fs-7 mb-2">Showroom Price & Deposit Summary</h6>
+                        <ul class="list-group list-group-flush fs-8 mb-0">
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                                <span class="text-muted">Estimated Ex-Showroom Price:</span>
+                                <strong class="text-dark">₹{{ car.price|indian_currency }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                                <span class="text-muted">Advance Booking Fee Paid:</span>
+                                <strong class="text-success fs-7">₹{{ booking.booking_amount|indian_currency }}</strong>
+                            </li>
+                            {% if balance_amount %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                                    <span class="text-muted">Estimated Balance on Delivery:</span>
+                                    <strong class="text-dark">₹{{ balance_amount|indian_currency }}</strong>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Official Transaction Receipt -->
+            <div class="col-12 col-lg-7">
+                <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4" id="printableReceiptArea">
+                    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between border-bottom pb-4 mb-4 gap-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="material-symbols-outlined text-primary fs-3">receipt_long</span>
+                                <h3 class="h5 fw-bold text-dark mb-0">Booking Transaction Receipt</h3>
+                            </div>
+                            <span class="text-muted fs-8">CarVistaHub Authorized Online Reservation Record</span>
+                        </div>
+                        <div class="text-sm-end">
+                            <span class="fs-8 text-muted d-block">Booking Reference</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-7 font-monospace fw-bold">
+                                {{ booking.booking_id }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Receipt Details Table -->
+                    <div class="table-responsive mb-4">
+                        <table class="table table-borderless align-middle fs-8 mb-0">
+                            <tbody>
+                                <tr class="border-bottom">
+                                    <th scope="row" class="text-muted py-2 w-40 fw-medium">Customer Name</th>
+                                    <td class="text-dark py-2 fw-semibold">{{ booking.customer.get_full_name|default:booking.customer.username }}</td>
+                                </tr>
+                                <tr class="border-bottom">
+                                    <th scope="row" class="text-muted py-2 fw-medium">Registered Email</th>
+                                    <td class="text-dark py-2">{{ booking.customer.email }}</td>
+                                </tr>
+                                {% if booking.customer.phone_number %}
+                                    <tr class="border-bottom">
+                                        <th scope="row" class="text-muted py-2 fw-medium">Contact Phone</th>
+                                        <td class="text-dark py-2">{{ booking.customer.phone_number }}</td>
+                                    </tr>
+                                {% endif %}
+                                <tr class="border-bottom">
+                                    <th scope="row" class="text-muted py-2 fw-medium">Payment Gateway</th>
+                                    <td class="text-dark py-2">
+                                        <span class="badge bg-light text-dark border px-2 py-1">Razorpay Standard Checkout</span>
+                                    </td>
+                                </tr>
+                                <tr class="border-bottom">
+                                    <th scope="row" class="text-muted py-2 fw-medium">Razorpay Payment ID</th>
+                                    <td class="text-dark py-2 font-monospace">{{ payment.razorpay_payment_id|default:"Pending Capture" }}</td>
+                                </tr>
+                                <tr class="border-bottom">
+                                    <th scope="row" class="text-muted py-2 fw-medium">Razorpay Order ID</th>
+                                    <td class="text-dark py-2 font-monospace">{{ payment.razorpay_order_id|default:"N/A" }}</td>
+                                </tr>
+                                <tr class="border-bottom">
+                                    <th scope="row" class="text-muted py-2 fw-medium">Payment Method</th>
+                                    <td class="text-dark py-2">{{ payment.payment_method|default:"Online Gateway"|upper }}</td>
+                                </tr>
+                                <tr class="border-bottom">
+                                    <th scope="row" class="text-muted py-2 fw-medium">Payment Timestamp</th>
+                                    <td class="text-dark py-2">
+                                        {% if payment.paid_at %}
+                                            {{ payment.paid_at|date:"D, d M Y, h:i A" }}
+                                        {% else %}
+                                            {{ booking.created_at|date:"D, d M Y, h:i A" }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr class="border-bottom">
+                                    <th scope="row" class="text-muted py-2 fw-medium">Payment Status</th>
+                                    <td class="py-2">
+                                        {% if booking.payment_status == 'PAID' or payment.payment_status == 'SUCCESS' %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                                ● Payment Verified (PAID)
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                                                ● {{ booking.get_payment_status_display }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-muted py-2 fw-medium">Reservation Status</th>
+                                    <td class="py-2">
+                                        {% if booking.booking_status == 'CONFIRMED' %}
+                                            <span class="badge bg-success text-white px-2 py-1">
+                                                Reservation Confirmed
+                                            </span>
+                                        {% elif is_allocation_pending %}
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                                                Allocation Review In Progress
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary text-white px-2 py-1">
+                                                {{ booking.get_booking_status_display }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Showroom Trust Guarantee Note -->
+                    <div class="bg-light p-3 rounded-3 fs-9 text-muted d-flex align-items-center gap-2 mb-0">
+                        <span class="material-symbols-outlined text-primary fs-5 flex-shrink-0">verified_user</span>
+                        <span>
+                            100% Refundable Booking Deposit. Authorized dealership order receipt verified by CarVistaHub.
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Next Steps Card -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                    <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                        <span class="material-symbols-outlined text-primary fs-5">assignment_turned_in</span>
+                        <span>Showroom Handover & Next Steps</span>
+                    </h5>
+                    <div class="row g-3 fs-8">
+                        <div class="col-12 col-md-6 d-flex align-items-start gap-2">
+                            <span class="badge bg-primary text-white rounded-circle px-2 py-1">1</span>
+                            <div>
+                                <strong class="text-dark d-block">Relationship Manager Call</strong>
+                                <span class="text-muted">You will receive a call within 24–48 hours to confirm variant details.</span>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 d-flex align-items-start gap-2">
+                            <span class="badge bg-primary text-white rounded-circle px-2 py-1">2</span>
+                            <div>
+                                <strong class="text-dark d-block">Chassis & VIN Assignment</strong>
+                                <span class="text-muted">A dedicated vehicle identification number will be reserved for you.</span>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 d-flex align-items-start gap-2">
+                            <span class="badge bg-primary text-white rounded-circle px-2 py-1">3</span>
+                            <div>
+                                <strong class="text-dark d-block">Documentation & Finance</strong>
+                                <span class="text-muted">Optional financing, registration (RTO), and insurance selection.</span>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 d-flex align-items-start gap-2">
+                            <span class="badge bg-primary text-white rounded-circle px-2 py-1">4</span>
+                            <div>
+                                <strong class="text-dark d-block">Showroom Delivery & PDI</strong>
+                                <span class="text-muted">Pre-delivery inspection and official vehicle handover key handover.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex flex-wrap gap-2 justify-content-end">
+                    <button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2 shadow-xs" onclick="window.print()">
+                        <span class="material-symbols-outlined fs-6">print</span>
+                        <span>Print Receipt</span>
+                    </button>
+                    <a href="{% url 'dashboard:vehicle_reservations' %}" class="btn btn-outline-primary d-inline-flex align-items-center gap-2 shadow-xs">
+                        <span class="material-symbols-outlined fs-6">shopping_cart_checkout</span>
+                        <span>My Vehicle Reservations</span>
+                    </a>
+                    <a href="{% url 'cars:car_list' %}" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-xs">
+                        <span class="material-symbols-outlined fs-6">directions_car</span>
+                        <span>Explore Showroom Cars</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block customer_notification %}
+{# Strictly suppress Test Drive confirmation / rejection popups on vehicle booking receipts #}
+{% endblock %}
+
+{% block notifications_script %}
+{# Strictly suppress background Test Drive polling scripts on vehicle booking receipts #}
+{% endblock %}
+
+

@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% load static currency_tags %}
+
+{% block title %}Explore New Cars | CarVistaHub{% endblock %}
+
+{% block content %}
+<!-- =========================================================================
+     PAGE HEADER / BREADCRUMB
+     ========================================================================= -->
+<section class="luxury-hero-bg py-5 border-bottom">
+    <div class="autohub-container">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'cars:home' %}" class="text-primary fw-semibold">Home</a></li>
+                <li class="breadcrumb-item active text-secondary" aria-current="page">Explore New Cars</li>
+            </ol>
+        </nav>
+
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div>
+                <h1 class="autohub-section-title mb-2">Explore New Cars</h1>
+                <p class="autohub-section-subtitle mb-0">
+                    Browse our curated showroom inventory of verified new cars available across authorized dealerships in India.
+                </p>
+            </div>
+            <div>
+                <span class="badge bg-primary text-white px-3 py-2 rounded-pill fs-7 fw-bold shadow-sm">
+                    {{ cars.count }} Car{{ cars.count|pluralize }} {% if is_filtered %}Found{% else %}Available{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================================
+     INTERACTIVE SEARCH & MULTI-FACET FILTER BAR
+     ========================================================================= -->
+<section class="py-4 bg-white border-bottom shadow-sm">
+    <div class="autohub-container">
+        <form action="{% url 'cars:car_list' %}" method="get" class="row g-3 align-items-end">
+            <!-- Keyword Search -->
+            <div class="col-12 col-md-3">
+                <label for="filterQ" class="hero-search-label d-block">Search Inventory</label>
+                <div class="position-relative">
+                    <input type="text" id="filterQ" name="q" value="{{ search_query }}"
+                           class="hero-select" placeholder="Model, keywords..." style="padding-left: 2.25rem;">
+                    <span class="material-symbols-outlined position-absolute top-50 start-0 translate-middle-y ms-2 text-muted fs-5">search</span>
+                </div>
+            </div>
+
+            <!-- Brand Filter -->
+            <div class="col-6 col-md-2">
+                <label for="filterBrand" class="hero-search-label d-block">Brand</label>
+                <select id="filterBrand" name="brand" class="hero-select">
+                    <option value="">All Brands</option>
+                    {% for b in brands %}
+                        <option value="{{ b.slug }}" {% if selected_brand == b.slug or selected_brand == b.name.lower %}selected{% endif %}>
+                            {{ b.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Budget Filter -->
+            <div class="col-6 col-md-2">
+                <label for="filterBudget" class="hero-search-label d-block">Budget (₹)</label>
+                <select id="filterBudget" name="budget" class="hero-select">
+                    <option value="">Any Budget</option>
+                    <option value="under-15l" {% if selected_budget == 'under-15l' %}selected{% endif %}>Under ₹15 Lakh</option>
+                    <option value="15l-35l" {% if selected_budget == '15l-35l' %}selected{% endif %}>₹15L – ₹35 Lakh</option>
+                    <option value="35l-75l" {% if selected_budget == '35l-75l' %}selected{% endif %}>₹35L – ₹75 Lakh</option>
+                    <option value="above-75l" {% if selected_budget == 'above-75l' %}selected{% endif %}>Above ₹75 Lakh</option>
+                </select>
+            </div>
+
+            <!-- Fuel Type Filter -->
+            <div class="col-6 col-md-2">
+                <label for="filterFuel" class="hero-search-label d-block">Fuel Type</label>
+                <select id="filterFuel" name="fuel" class="hero-select">
+                    <option value="">All Fuel Types</option>
+                    <option value="petrol" {% if selected_fuel == 'petrol' %}selected{% endif %}>Petrol</option>
+                    <option value="diesel" {% if selected_fuel == 'diesel' %}selected{% endif %}>Diesel</option>
+                    <option value="electric" {% if selected_fuel == 'electric' %}selected{% endif %}>Electric (EV)</option>
+                    <option value="hybrid" {% if selected_fuel == 'hybrid' %}selected{% endif %}>Hybrid</option>
+                    <option value="cng" {% if selected_fuel == 'cng' %}selected{% endif %}>CNG</option>
+                </select>
+            </div>
+
+            <!-- Body Type Filter -->
+            <div class="col-6 col-md-2">
+                <label for="filterBody" class="hero-search-label d-block">Body Style</label>
+                <select id="filterBody" name="body_type" class="hero-select">
+                    <option value="">All Body Styles</option>
+                    {% for choice in body_type_choices %}
+                        <option value="{{ choice.0 }}" {% if selected_body_type == choice.0 %}selected{% endif %}>
+                            {{ choice.1 }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="col-12 col-md-1 d-flex gap-2">
+                <button type="submit" class="btn btn-autohub-primary w-100 py-2 d-flex align-items-center justify-content-center" title="Apply Filters">
+                    <span class="material-symbols-outlined fs-5">filter_alt</span>
+                </button>
+                {% if is_filtered %}
+                    <a href="{% url 'cars:car_list' %}" class="btn btn-outline-secondary py-2 d-flex align-items-center justify-content-center" title="Clear All Filters">
+                        <span class="material-symbols-outlined fs-5">close</span>
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+
+        <!-- Active Filter Indicator Chips -->
+        {% if is_filtered %}
+            <div class="d-flex flex-wrap align-items-center gap-2 mt-3 pt-3 border-top">
+                <span class="text-muted fs-8 fw-bold text-uppercase tracking-wide">Active Filters:</span>
+                {% if selected_brand %}
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle py-1 px-3 rounded-pill fs-8 d-inline-flex align-items-center gap-1">
+                        Brand: {{ active_brand_name|default:selected_brand }}
+                    </span>
+                {% endif %}
+                {% if selected_budget %}
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle py-1 px-3 rounded-pill fs-8 d-inline-flex align-items-center gap-1">
+                        Budget: {{ selected_budget }}
+                    </span>
+                {% endif %}
+                {% if selected_fuel %}
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle py-1 px-3 rounded-pill fs-8 d-inline-flex align-items-center gap-1">
+                        Fuel: {{ selected_fuel|title }}
+                    </span>
+                {% endif %}
+                {% if selected_body_type %}
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle py-1 px-3 rounded-pill fs-8 d-inline-flex align-items-center gap-1">
+                        Body: {{ selected_body_type }}
+                    </span>
+                {% endif %}
+                {% if search_query %}
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle py-1 px-3 rounded-pill fs-8 d-inline-flex align-items-center gap-1">
+                        "{{ search_query }}"
+                    </span>
+                {% endif %}
+                <a href="{% url 'cars:car_list' %}" class="text-danger fs-8 fw-semibold ms-2 link-underline-opacity-0 link-underline-opacity-100-hover d-inline-flex align-items-center gap-1">
+                    <span class="material-symbols-outlined fs-7">restart_alt</span>
+                    <span>Reset All</span>
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- =========================================================================
+     DYNAMIC CAR LISTING GRID
+     ========================================================================= -->
+<section class="autohub-section" id="car-inventory">
+    <div class="autohub-container">
+        <div class="row g-4 g-lg-5">
+            {% for car in cars %}
+                <!-- Dynamic Car Card Item -->
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="car-card">
+                        <!-- Car Image & Badges -->
+                        <div class="car-card-img-wrapper">
+                            <a href="{% url 'cars:car_detail' car.slug %}" class="d-block w-100 h-100">
+                                {% with first_img=car.images.first %}
+                                    {% if first_img and first_img.image %}
+                                        <img src="{{ first_img.image.url }}"
+                                             alt="{{ car.brand.name }} {{ car.title }}"
+                                             class="car-card-img"
+                                             loading="lazy">
+                                    {% else %}
+                                        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUQhAtRGz3uLDLxsWgIByZUkOcOMsUPNaGxOe47DY9AHVGDl0LoBw4Q3kq89AUtdCpmLndRMV_BDELD8ViLao6d5Xcy-CBF9acEHxamgJFOFpUTska_oKNCYABH-BxCi6k1-5d0vktQRfQSsPZA7O3pyPl1Pif2WxRXsd9XMgPISqLjSYtCxjcgoNh2rR_Odi5QMu2JL2IprlY6lopRvbdT2F1Bk2yTdg6d0HbXoD_I1whu4Qf50Sofw"
+                                             alt="{{ car.brand.name }} {{ car.title }}"
+                                             class="car-card-img"
+                                             loading="lazy">
+                                    {% endif %}
+                                {% endwith %}
+                            </a>
+
+                            <!-- Category / Availability Badges -->
+                            <div class="car-card-badge">
+                                {% if car.is_featured %}
+                                    <span class="autohub-badge-accent">Featured</span>
+                                {% elif car.fuel_type == 'ELECTRIC' or car.body_type == 'EV' %}
+                                    <span class="autohub-badge-primary">EV</span>
+                                {% else %}
+                                    <span class="autohub-badge-primary">{{ car.get_body_type_display }}</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Wishlist Toggle Button -->
+                            <button type="button"
+                                    class="wishlist-btn position-absolute top-0 end-0 m-3 btn btn-light rounded-circle p-2 shadow-sm d-flex align-items-center justify-content-center border-0"
+                                    data-car-id="{{ car.id }}"
+                                    data-car-title="{{ car.title }}"
+                                    title="{% if car.id in user_wishlist_car_ids %}Remove from Wishlist{% else %}Add to Wishlist{% endif %}"
+                                    aria-label="{% if car.id in user_wishlist_car_ids %}Remove {{ car.title }} from Wishlist{% else %}Add {{ car.title }} to Wishlist{% endif %}">
+                                <span class="material-symbols-outlined fs-5 wishlist-icon {% if car.id in user_wishlist_car_ids %}filled text-danger{% else %}text-muted{% endif %}">
+                                    favorite
+                                </span>
+                            </button>
+                        </div>
+
+                        <!-- Car Card Details Body -->
+                        <div class="car-card-body">
+                            <!-- Brand & Model Title -->
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="text-primary fw-bold text-uppercase fs-7 tracking-wide">{{ car.brand.name }}</span>
+                                <span class="text-muted fs-8">{{ car.seating_capacity }} Seater</span>
+                            </div>
+                            <h3 class="car-title">
+                                <a href="{% url 'cars:car_detail' car.slug %}" class="text-reset text-decoration-none">
+                                    {{ car.title }}
+                                </a>
+                            </h3>
+                            
+                            <!-- Price in INR -->
+                            <div class="car-price">
+                                ₹{{ car.price|indian_currency }} <span class="text-muted fw-normal fs-7">Ex-Showroom</span>
+                            </div>
+
+                            <!-- Specification Grid (ORM Fields) -->
+                            <div class="car-spec-grid">
+                                <div class="car-spec-item">
+                                    <div class="car-spec-label">Fuel</div>
+                                    <div class="car-spec-value">{{ car.get_fuel_type_display }}</div>
+                                </div>
+                                <div class="car-spec-item">
+                                    <div class="car-spec-label">Transmission</div>
+                                    <div class="car-spec-value">{{ car.get_transmission_display }}</div>
+                                </div>
+                                <div class="car-spec-item">
+                                    <div class="car-spec-label">Mileage / Range</div>
+                                    <div class="car-spec-value">{{ car.mileage }}</div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex gap-2 mt-auto">
+                                <a href="{% url 'cars:car_detail' car.slug %}" class="btn btn-autohub-primary flex-grow-1">
+                                    View Details
+                                </a>
+                                <a href="{% url 'cars:compare' %}?car={{ car.slug }}" class="btn-icon-square btn-compare-add" data-car-id="{{ car.id }}" title="Compare {{ car.title }}" aria-label="Compare {{ car.title }}">
+                                    <span class="material-symbols-outlined">compare_arrows</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <!-- Friendly Empty State Message -->
+                <div class="col-12">
+                    <div class="premium-card p-5 text-center my-4 mx-auto" style="max-width: 640px;">
+                        <div class="advantage-icon-box mx-auto mb-4" style="width: 72px; height: 72px;">
+                            <span class="material-symbols-outlined fs-1 text-primary">search_off</span>
+                        </div>
+                        <h3 class="autohub-section-title fs-3 mb-2">No Matching Cars Found</h3>
+                        <p class="autohub-section-subtitle fs-6 mb-4">
+                            {% if is_filtered %}
+                                We couldn't find any vehicles matching your selected filter criteria. Try adjusting your brand, budget, or fuel preferences to view available models.
+                            {% else %}
+                                Our showroom inventory is currently being updated with the latest 2026 models. Please check back shortly or explore our featured highlights on the homepage.
+                            {% endif %}
+                        </p>
+                        {% if is_filtered %}
+                            <a href="{% url 'cars:car_list' %}" class="btn btn-autohub-primary px-4 py-2">
+                                <span class="material-symbols-outlined fs-5">refresh</span>
+                                <span>Clear Filters & Show All Cars</span>
+                            </a>
+                        {% else %}
+                            <a href="{% url 'cars:home' %}" class="btn btn-autohub-primary px-4 py-2">
+                                <span class="material-symbols-outlined fs-5">arrow_back</span>
+                                <span>Return to Homepage</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

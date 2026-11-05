@@ -1,0 +1,636 @@
+{% extends "base.html" %}
+{% load static currency_tags %}
+
+{% block title %}CarVistaHub | Premium Car Showroom{% endblock %}
+
+{% block content %}
+<!-- =========================================================================
+     1. HERO SECTION
+     ========================================================================= -->
+<section class="hero-section luxury-hero-bg" id="hero">
+    <!-- Ambient Blur Glow Accent -->
+    <div class="hero-glow-blob" aria-hidden="true"></div>
+
+    <div class="autohub-container position-relative z-1">
+        <div class="row align-items-center g-5">
+            <!-- Hero Copy & Search Interface -->
+            <div class="col-12 col-lg-6">
+                <div class="mb-4">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-bold text-uppercase fs-7 mb-3 d-inline-block">
+                        ★ India's Trusted Car Discovery Platform
+                    </span>
+                    <h1 class="hero-title">
+                        Find Your Perfect Car with <span class="text-highlight">Confidence</span>
+                    </h1>
+                    <p class="hero-subtitle mt-3 mb-4">
+                        Explore the latest models, compare features side-by-side, and book test drives at your nearest verified showrooms across India.
+                    </p>
+                </div>
+
+                <!-- Integrated Search & Filter Widget -->
+                <div class="hero-search-box mb-4">
+                    <form action="{% url 'cars:car_list' %}" method="get" class="row g-3 align-items-end">
+                        <!-- Brand Selector -->
+                        <div class="col-12 col-md-4">
+                            <label for="searchBrand" class="hero-search-label d-block">Brand</label>
+                            <select id="searchBrand" name="brand" class="hero-select">
+                                <option value="">Select Brand</option>
+                                {% if brands %}
+                                    {% for b in brands %}
+                                        <option value="{{ b.slug }}">{{ b.name }}</option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="toyota">Toyota</option>
+                                    <option value="hyundai">Hyundai</option>
+                                    <option value="tata">Tata Motors</option>
+                                    <option value="mahindra">Mahindra</option>
+                                    <option value="honda">Honda</option>
+                                    <option value="bmw">BMW</option>
+                                    <option value="mercedes-benz">Mercedes-Benz</option>
+                                    <option value="kia">Kia</option>
+                                {% endif %}
+                            </select>
+                        </div>
+
+                        <!-- Budget Selector -->
+                        <div class="col-12 col-md-4">
+                            <label for="searchBudget" class="hero-search-label d-block">Budget (₹)</label>
+                            <select id="searchBudget" name="budget" class="hero-select">
+                                <option value="">Any Price</option>
+                                <option value="under-15l">Under ₹15 Lakh</option>
+                                <option value="15l-35l">₹15 Lakh – ₹35 Lakh</option>
+                                <option value="35l-75l">₹35 Lakh – ₹75 Lakh</option>
+                                <option value="above-75l">Above ₹75 Lakh</option>
+                            </select>
+                        </div>
+
+                        <!-- Fuel Type Selector -->
+                        <div class="col-12 col-md-4">
+                            <label for="searchFuel" class="hero-search-label d-block">Fuel Type</label>
+                            <select id="searchFuel" name="fuel" class="hero-select">
+                                <option value="">All Fuel Types</option>
+                                <option value="petrol">Petrol</option>
+                                <option value="diesel">Diesel</option>
+                                <option value="electric">Electric (EV)</option>
+                                <option value="hybrid">Hybrid</option>
+                            </select>
+                        </div>
+
+                        <!-- Search Button -->
+                        <div class="col-12 mt-3">
+                            <button type="submit" class="btn btn-autohub-primary w-100 py-3 fs-6">
+                                <span class="material-symbols-outlined">search</span>
+                                <span>Search Showroom Inventory</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Secondary Hero Links -->
+                <div class="d-flex align-items-center gap-4">
+                    <a href="#how-it-works" class="text-primary fw-bold d-inline-flex align-items-center gap-1 link-underline-opacity-0 link-underline-opacity-100-hover">
+                        <span>Book a Test Drive</span>
+                        <span class="material-symbols-outlined fs-5">chevron_right</span>
+                    </a>
+                    <span class="text-muted">•</span>
+                    <a href="{% url 'cars:car_list' %}" class="text-secondary fw-semibold d-inline-flex align-items-center gap-1 link-underline-opacity-0 link-underline-opacity-100-hover">
+                        <span>Browse 2026 Models</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Hero Car Visual -->
+            <div class="col-12 col-lg-6 d-none d-lg-block">
+                <div class="hero-image-wrapper">
+                    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5Z5I3xg0r9Y6vr08WhM-7bBeY3Bzrs0PBo4IVq8IcCORVWcUg1ix8_ItJ1CZL1gOvbHnWlOC1egxh1JL4UjuSf-WJO0mDuBiEo6TsRHtobw4_xewJ7470QNGITT82w6TJtlqUitpC0E8TXyCUIvV5hRweUtVjUogxxGXDGsdY3s8jHhp-OVCn9lhqS0UlknZcIqK1rmsmg5Z5h-njoQwcDca97qI0URT80sp_LKwMMSKCElCKPe6QBA"
+                         alt="CarVistaHub Luxury Executive Sedan Showroom Exhibition"
+                         class="hero-image img-fluid"
+                         loading="eager">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================================
+     2. SHOP BY BRAND SECTION
+     ========================================================================= -->
+<section class="autohub-section" id="shop-brands">
+    <div class="autohub-container">
+        <!-- Section Header -->
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-2">
+            <div>
+                <h2 class="autohub-section-title">Shop by Brand</h2>
+                <p class="autohub-section-subtitle mb-0">Explore new car models from India's most popular automakers.</p>
+            </div>
+            <a href="{% url 'cars:car_list' %}" class="text-primary fw-bold d-inline-flex align-items-center gap-1">
+                <span>View All Brands</span>
+                <span class="material-symbols-outlined fs-5">arrow_forward</span>
+            </a>
+        </div>
+
+        <!-- Brand Cards Grid -->
+        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-8 g-3 g-lg-4">
+            <!-- Brand 1: Toyota -->
+            <div class="col">
+                <a href="{% url 'cars:car_list' %}?brand=toyota" class="brand-card text-decoration-none">
+                    <div class="brand-icon-wrapper">
+                        <span class="material-symbols-outlined fs-1">toys</span>
+                    </div>
+                    <span class="brand-name">Toyota</span>
+                </a>
+            </div>
+
+            <!-- Brand 2: Hyundai -->
+            <div class="col">
+                <a href="{% url 'cars:car_list' %}?brand=hyundai" class="brand-card text-decoration-none">
+                    <div class="brand-icon-wrapper">
+                        <span class="material-symbols-outlined fs-1">directions_car</span>
+                    </div>
+                    <span class="brand-name">Hyundai</span>
+                </a>
+            </div>
+
+            <!-- Brand 3: Tata -->
+            <div class="col">
+                <a href="{% url 'cars:car_list' %}?brand=tata" class="brand-card text-decoration-none">
+                    <div class="brand-icon-wrapper">
+                        <span class="material-symbols-outlined fs-1">electric_car</span>
+                    </div>
+                    <span class="brand-name">Tata</span>
+                </a>
+            </div>
+
+            <!-- Brand 4: Mahindra -->
+            <div class="col">
+                <a href="{% url 'cars:car_list' %}?brand=mahindra" class="brand-card text-decoration-none">
+                    <div class="brand-icon-wrapper">
+                        <span class="material-symbols-outlined fs-1">agriculture</span>
+                    </div>
+                    <span class="brand-name">Mahindra</span>
+                </a>
+            </div>
+
+            <!-- Brand 5: Honda -->
+            <div class="col">
+                <a href="{% url 'cars:car_list' %}?brand=honda" class="brand-card text-decoration-none">
+                    <div class="brand-icon-wrapper">
+                        <span class="material-symbols-outlined fs-1">minor_crash</span>
+                    </div>
+                    <span class="brand-name">Honda</span>
+                </a>
+            </div>
+
+            <!-- Brand 6: BMW -->
+            <div class="col">
+                <a href="{% url 'cars:car_list' %}?brand=bmw" class="brand-card text-decoration-none">
+                    <div class="brand-icon-wrapper">
+                        <span class="material-symbols-outlined fs-1">switch_account</span>
+                    </div>
+                    <span class="brand-name">BMW</span>
+                </a>
+            </div>
+
+            <!-- Brand 7: Mercedes-Benz -->
+            <div class="col">
+                <a href="{% url 'cars:car_list' %}?brand=mercedes-benz" class="brand-card text-decoration-none">
+                    <div class="brand-icon-wrapper">
+                        <span class="material-symbols-outlined fs-1">stars</span>
+                    </div>
+                    <span class="brand-name">Mercedes</span>
+                </a>
+            </div>
+
+            <!-- Brand 8: Kia -->
+            <div class="col">
+                <a href="{% url 'cars:car_list' %}?brand=kia" class="brand-card text-decoration-none">
+                    <div class="brand-icon-wrapper">
+                        <span class="material-symbols-outlined fs-1">bolt</span>
+                    </div>
+                    <span class="brand-name">Kia</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================================
+     3. FEATURED NEW CARS SECTION
+     ========================================================================= -->
+<section class="autohub-section featured-section" id="featured-cars">
+    <div class="autohub-container">
+        <!-- Section Header with Category Tabs -->
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-5 gap-3">
+            <div>
+                <h2 class="autohub-section-title">Featured New Cars</h2>
+                <p class="autohub-section-subtitle mb-0">Curated selection of this season's most anticipated arrivals.</p>
+            </div>
+            <!-- Category Filter Tabs -->
+            <div class="d-flex flex-wrap gap-2" role="tablist">
+                <button type="button" class="category-tab-btn active" data-filter="all" role="tab" aria-selected="true">All Models</button>
+                <button type="button" class="category-tab-btn" data-filter="sedan" role="tab" aria-selected="false">Sedans</button>
+                <button type="button" class="category-tab-btn" data-filter="suv" role="tab" aria-selected="false">SUVs</button>
+                <button type="button" class="category-tab-btn" data-filter="electric" role="tab" aria-selected="false">Electric</button>
+            </div>
+        </div>
+
+        <!-- Car Cards Container -->
+        <div class="row g-4 g-lg-5" id="featured-cars-grid">
+            {% for car in featured_cars %}
+                <div class="col-12 col-md-6 col-lg-4 car-item" data-body-type="{{ car.body_type }}" data-fuel-type="{{ car.fuel_type }}">
+                    <div class="car-card">
+                        <!-- Car Image & Badges -->
+                        <div class="car-card-img-wrapper">
+                            {% with first_img=car.images.first %}
+                                {% if first_img and first_img.image %}
+                                    <img src="{{ first_img.image.url }}"
+                                         alt="{{ car.brand.name }} {{ car.title }}"
+                                         class="car-card-img"
+                                         loading="lazy">
+                                {% else %}
+                                    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUQhAtRGz3uLDLxsWgIByZUkOcOMsUPNaGxOe47DY9AHVGDl0LoBw4Q3kq89AUtdCpmLndRMV_BDELD8ViLao6d5Xcy-CBF9acEHxamgJFOFpUTska_oKNCYABH-BxCi6k1-5d0vktQRfQSsPZA7O3pyPl1Pif2WxRXsd9XMgPISqLjSYtCxjcgoNh2rR_Odi5QMu2JL2IprlY6lopRvbdT2F1Bk2yTdg6d0HbXoD_I1whu4Qf50Sofw"
+                                         alt="{{ car.brand.name }} {{ car.title }}"
+                                         class="car-card-img"
+                                         loading="lazy">
+                                {% endif %}
+                            {% endwith %}
+
+                            <!-- Badges: Primary Body Type + Secondary FEATURED Badge -->
+                            <div class="car-card-badge d-flex gap-1 align-items-center">
+                                {% if car.body_type == 'EV' or car.fuel_type == 'ELECTRIC' %}
+                                    <span class="autohub-badge-primary">ELECTRIC</span>
+                                {% else %}
+                                    <span class="autohub-badge-primary">{{ car.get_body_type_display|upper }}</span>
+                                {% endif %}
+                                {% if car.is_featured %}
+                                    <span class="autohub-badge-accent">FEATURED</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Wishlist Toggle Button -->
+                            <button type="button"
+                                    class="wishlist-btn position-absolute top-0 end-0 m-3 btn btn-light rounded-circle p-2 shadow-sm d-flex align-items-center justify-content-center border-0"
+                                    data-car-id="{{ car.id }}"
+                                    data-car-title="{{ car.title }}"
+                                    title="{% if car.id in user_wishlist_car_ids %}Remove from Wishlist{% else %}Add to Wishlist{% endif %}"
+                                    aria-label="{% if car.id in user_wishlist_car_ids %}Remove {{ car.title }} from Wishlist{% else %}Add {{ car.title }} to Wishlist{% endif %}">
+                                <span class="material-symbols-outlined fs-5 wishlist-icon {% if car.id in user_wishlist_car_ids %}filled text-danger{% else %}text-muted{% endif %}">
+                                    favorite
+                                </span>
+                            </button>
+                        </div>
+
+                        <!-- Car Card Body -->
+                        <div class="car-card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="text-primary fw-bold text-uppercase fs-7 tracking-wide">{{ car.brand.name }}</span>
+                                <span class="text-muted fs-8">{{ car.seating_capacity }} Seater</span>
+                            </div>
+                            <h3 class="car-title"><a href="{% url 'cars:car_detail' car.slug %}" class="text-reset text-decoration-none">{{ car.title }}</a></h3>
+                            <div class="car-price">
+                                ₹{{ car.price|indian_currency }} <span class="text-muted fw-normal fs-7">Ex-Showroom</span>
+                            </div>
+
+                            <div class="car-spec-grid">
+                                <div class="car-spec-item">
+                                    <div class="car-spec-label">Fuel</div>
+                                    <div class="car-spec-value">{{ car.get_fuel_type_display }}</div>
+                                </div>
+                                <div class="car-spec-item">
+                                    <div class="car-spec-label">Transmission</div>
+                                    <div class="car-spec-value">{{ car.get_transmission_display }}</div>
+                                </div>
+                                <div class="car-spec-item">
+                                    <div class="car-spec-label">Mileage / Range</div>
+                                    <div class="car-spec-value">{{ car.mileage }}</div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 mt-auto">
+                                <a href="{% url 'cars:car_detail' car.slug %}" class="btn btn-autohub-primary flex-grow-1">View Details</a>
+                                <a href="{% url 'cars:compare' %}?car={{ car.slug }}" class="btn-icon-square btn-compare-add" data-car-id="{{ car.id }}" title="Compare {{ car.title }}" aria-label="Compare {{ car.title }}">
+                                    <span class="material-symbols-outlined">compare_arrows</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <div class="premium-card p-5 text-center my-4 mx-auto" style="max-width: 600px;">
+                        <div class="advantage-icon-box mx-auto mb-3" style="width: 64px; height: 64px;">
+                            <span class="material-symbols-outlined fs-2 text-primary">directions_car</span>
+                        </div>
+                        <h4 class="autohub-section-title fs-4 mb-2">No Featured Cars Currently Available</h4>
+                        <p class="autohub-section-subtitle fs-6 mb-4">
+                            Explore our full inventory of verified new cars available across Indian showrooms.
+                        </p>
+                        <a href="{% url 'cars:car_list' %}" class="btn btn-autohub-primary px-4 py-2">
+                            <span>Explore New Cars</span>
+                            <span class="material-symbols-outlined fs-5">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================================
+     4. THE CARVISTAHUB ADVANTAGE SECTION
+     ========================================================================= -->
+<section class="autohub-section" id="advantages">
+    <div class="autohub-container">
+        <!-- Section Header -->
+        <div class="text-center max-w-3xl mx-auto mb-5">
+            <h2 class="autohub-section-title">The CarVistaHub Advantage</h2>
+            <p class="autohub-section-subtitle mx-auto" style="max-width: 680px;">
+                We've redesigned the car buying experience from the ground up to prioritize your trust, transparency, and convenience.
+            </p>
+        </div>
+
+        <!-- Advantages Grid -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            <!-- Advantage 1 -->
+            <div class="col">
+                <div class="advantage-card">
+                    <div class="advantage-icon-box">
+                        <span class="material-symbols-outlined fs-2 material-symbols-filled">verified_user</span>
+                    </div>
+                    <h4 class="advantage-title">Trusted Listings</h4>
+                    <p class="advantage-text">
+                        Every car listed is 100% verified for manufacturer authenticity, official paperwork, and genuine warranty terms.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Advantage 2 -->
+            <div class="col">
+                <div class="advantage-card">
+                    <div class="advantage-icon-box">
+                        <span class="material-symbols-outlined fs-2 material-symbols-filled">compare</span>
+                    </div>
+                    <h4 class="advantage-title">Easy Comparison</h4>
+                    <p class="advantage-text">
+                        Side-by-side technical specifications, fuel efficiency, safety ratings, and price breakdowns for any model.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Advantage 3 -->
+            <div class="col">
+                <div class="advantage-card">
+                    <div class="advantage-icon-box">
+                        <span class="material-symbols-outlined fs-2 material-symbols-filled">event_available</span>
+                    </div>
+                    <h4 class="advantage-title">Secure Booking</h4>
+                    <p class="advantage-text">
+                        Instant slot booking for doorstep or showroom test drives with dedicated dealer representative support.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Advantage 4 -->
+            <div class="col">
+                <div class="advantage-card">
+                    <div class="advantage-icon-box">
+                        <span class="material-symbols-outlined fs-2 material-symbols-filled">store</span>
+                    </div>
+                    <h4 class="advantage-title">Verified Showrooms</h4>
+                    <p class="advantage-text">
+                        Direct connection to top-rated authorized dealerships across major Indian metropolitan cities with exclusive benefits.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================================
+     5. HOW IT WORKS / CUSTOMER JOURNEY
+     ========================================================================= -->
+<section class="autohub-section journey-section" id="how-it-works">
+    <div class="autohub-container">
+        <!-- Section Header -->
+        <div class="text-center mb-5">
+            <h2 class="autohub-section-title text-white">Your Journey to a New Car</h2>
+            <p class="text-secondary-fixed text-white-50">Four seamless steps from research to driving home your dream car.</p>
+        </div>
+
+        <!-- 4 Steps Timeline Grid -->
+        <div class="row g-4 text-center">
+            <!-- Step 1 -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="d-flex flex-column align-items-center">
+                    <div class="journey-step-circle journey-step-1">1</div>
+                    <h4 class="journey-step-title">Search</h4>
+                    <p class="journey-step-desc">
+                        Discover models by brand, price range, transmission, or fuel preference using smart filters.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="d-flex flex-column align-items-center">
+                    <div class="journey-step-circle journey-step-2">2</div>
+                    <h4 class="journey-step-title">Compare</h4>
+                    <p class="journey-step-desc">
+                        Evaluate detailed performance figures, engine specs, and features with our comparison engine.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="d-flex flex-column align-items-center">
+                    <div class="journey-step-circle journey-step-3">3</div>
+                    <h4 class="journey-step-title">Book Test Drive</h4>
+                    <p class="journey-step-desc">
+                        Select your preferred verified dealership and time slot for a personalized driving experience.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="d-flex flex-column align-items-center">
+                    <div class="journey-step-circle journey-step-4">4</div>
+                    <h4 class="journey-step-title">Confirm Booking</h4>
+                    <p class="journey-step-desc">
+                        Lock in the best on-road pricing and drive home your new car with complete peace of mind.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================================
+     6. CUSTOMER TESTIMONIALS
+     ========================================================================= -->
+<section class="autohub-section" id="testimonials">
+    <div class="autohub-container">
+        <!-- Section Header -->
+        <div class="text-center mb-5">
+            <h2 class="autohub-section-title">What Our Customers Say</h2>
+            <p class="autohub-section-subtitle">Real experiences from verified car owners and enthusiastic drivers.</p>
+        </div>
+
+        <!-- Testimonial Cards Grid -->
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            <!-- Review 1 -->
+            <div class="col">
+                <div class="testimonial-card">
+                    <span class="material-symbols-outlined testimonial-quote-icon">format_quote</span>
+                    <div class="d-flex align-items-center gap-3">
+                        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtx98fOvKHFsmaoePsqNjwEa8cY5FGLIuZc9bwzscsBjMuKZo3DLYiESg5x1XdWctFEHqtA_AP5LnH0DYTr0EiVgzzUMqu3U-wz9Q4ztNqoqbg66wSuOeBWdAWvt-8fgJ9NWaZ7g2Y7SYZYoMuuZsgFnVnVdM3EdUZLho-34-h6eRMJl0rX6l1ok-nb1LHAe7dQFJeoPQ3ICTNWyW0fkZsl1Hu5SDSNtyDT1glMkQPanRaDca8Bp6UBQ"
+                             alt="Michael Chen - Verified Buyer"
+                             class="testimonial-avatar"
+                             loading="lazy">
+                        <div>
+                            <h5 class="testimonial-name mb-0">Michael Chen</h5>
+                            <span class="testimonial-role">Verified Buyer</span>
+                        </div>
+                    </div>
+                    <p class="testimonial-quote">
+                        "CarVistaHub made the research phase so much easier. I could compare three different SUVs on one screen and book a test drive in minutes. Outstanding service!"
+                    </p>
+                </div>
+            </div>
+
+            <!-- Review 2 -->
+            <div class="col">
+                <div class="testimonial-card">
+                    <span class="material-symbols-outlined testimonial-quote-icon">format_quote</span>
+                    <div class="d-flex align-items-center gap-3">
+                        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVqpqwFXpIiBBniKCCg2Npsm-9zWYqkxgpyzO3_fWaxSHgYnIkNlhSpk6R3B2Y41jq147HmkTyqLC3HadEm8sdRxKGCCxP1HTPDG3P4DUQUn9bPS6Q_JmqQCuCBbnM5I0zZxrRp5jlP95i9z5UmNo8JUd4DicVvwYGoKHX46QHdD583ACMQY78QTtgiCK1--lkjWcC_3evU3hvILXpyFlOFLpA_jvdDWu3-puYzbm7lJuQelrF3Lg5EQ"
+                             alt="Sarah Jenkins - First-time Owner"
+                             class="testimonial-avatar"
+                             loading="lazy">
+                        <div>
+                            <h5 class="testimonial-name mb-0">Sarah Jenkins</h5>
+                            <span class="testimonial-role">First-time Owner</span>
+                        </div>
+                    </div>
+                    <p class="testimonial-quote">
+                        "As a first-time buyer, I was overwhelmed by options. The CarVistaHub Advantage gave me the confidence I needed. The dealer they matched me with was incredibly professional."
+                    </p>
+                </div>
+            </div>
+
+            <!-- Review 3 -->
+            <div class="col">
+                <div class="testimonial-card">
+                    <span class="material-symbols-outlined testimonial-quote-icon">format_quote</span>
+                    <div class="d-flex align-items-center gap-3">
+                        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDA1-ioOxnSa0R1Xj1aLZ0db4ubdWNfP5_STk5VUOekENZXUtQeLJWES_0RC1tRZIPwUw5svKac7K29JCIrKqMCEZTcNprJQCD84y1qzaFGF_P3UXswg-gMdJDbi5MEJ8uoTn5Zp27Mln3cTWy7FOggLme99II0nQbVtwTHTavkN2gL4UuqYbEd09JUNZNib33p1cXIS_5AA80q38MTwkakT-GNXgWey32dI5FtPJgM3DH8DM3l4AKfxg"
+                             alt="David Thompson - Automotive Enthusiast"
+                             class="testimonial-avatar"
+                             loading="lazy">
+                        <div>
+                            <h5 class="testimonial-name mb-0">David Thompson</h5>
+                            <span class="testimonial-role">Car Enthusiast</span>
+                        </div>
+                    </div>
+                    <p class="testimonial-quote">
+                        "I've bought several cars over the years, and this was by far the smoothest process. The specs comparison is fast, honest, and comprehensive. Highly recommended."
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================================
+     7. FREQUENTLY ASKED QUESTIONS (FAQ)
+     ========================================================================= -->
+<section class="autohub-section faq-section" id="faq">
+    <div class="autohub-container">
+        <!-- Section Header -->
+        <div class="text-center mb-5">
+            <h2 class="autohub-section-title">Frequently Asked Questions</h2>
+            <p class="autohub-section-subtitle">Everything you need to know about booking, pricing, and showroom visits.</p>
+        </div>
+
+        <!-- Accordion FAQ Items -->
+        <div class="mx-auto" style="max-width: 800px;">
+            <!-- FAQ 1 -->
+            <details class="faq-item" open>
+                <summary class="faq-summary">
+                    <span>How do I book a test drive through CarVistaHub?</span>
+                    <span class="material-symbols-outlined faq-icon">expand_more</span>
+                </summary>
+                <div class="faq-content">
+                    Simply find the car you're interested in, click 'Book Test Drive', and select your preferred verified showroom and convenient time slot. Our partner showroom will contact you to confirm and prepare the vehicle.
+                </div>
+            </details>
+
+            <!-- FAQ 2 -->
+            <details class="faq-item">
+                <summary class="faq-summary">
+                    <span>Are all prices shown on CarVistaHub final on-road prices?</span>
+                    <span class="material-symbols-outlined faq-icon">expand_more</span>
+                </summary>
+                <div class="faq-content">
+                    Prices listed represent standard ex-showroom base prices in INR (₹). Final on-road prices may vary slightly based on state registration fees, road taxes, insurance choices, and dealership accessories.
+                </div>
+            </details>
+
+            <!-- FAQ 3 -->
+            <details class="faq-item">
+                <summary class="faq-summary">
+                    <span>Can I compare electric cars (EV) with petrol or hybrid cars?</span>
+                    <span class="material-symbols-outlined faq-icon">expand_more</span>
+                </summary>
+                <div class="faq-content">
+                    Yes! Our comparison engine handles cross-category analysis, including battery range to fuel efficiency conversions, torque comparisons, and running cost estimates.
+                </div>
+            </details>
+
+            <!-- FAQ 4 -->
+            <details class="faq-item">
+                <summary class="faq-summary">
+                    <span>What documents do I need to carry for a test drive?</span>
+                    <span class="material-symbols-outlined faq-icon">expand_more</span>
+                </summary>
+                <div class="faq-content">
+                    You only need a valid Indian Driving License and a government-issued photo ID (Aadhaar/PAN/Passport). The dealership will verify these before your driving session.
+                </div>
+            </details>
+        </div>
+    </div>
+</section>
+
+<!-- =========================================================================
+     8. NEWSLETTER / CALL-TO-ACTION SECTION
+     ========================================================================= -->
+<section class="autohub-section pb-5" id="newsletter">
+    <div class="autohub-container">
+        <div class="newsletter-card">
+            <div class="newsletter-glow" aria-hidden="true"></div>
+            <div class="row align-items-center g-4 position-relative z-1">
+                <div class="col-12 col-lg-7">
+                    <h2 class="newsletter-title">Stay Ahead of the Curve</h2>
+                    <p class="newsletter-text mb-0">
+                        Get exclusive early notifications for upcoming car launches in India, expert reviews, and personalized price drops directly in your inbox.
+                    </p>
+                </div>
+                <div class="col-12 col-lg-5">
+                    <form action="#newsletter" method="post" class="d-flex flex-column flex-sm-row gap-2" onsubmit="event.preventDefault(); alert('Thank you for subscribing to CarVistaHub updates!');">
+                        {% csrf_token %}
+                        <input type="email"
+                               name="email"
+                               class="form-control newsletter-input flex-grow-1"
+                               placeholder="Enter your email address"
+                               required>
+                        <button type="submit" class="btn btn-autohub-accent text-nowrap">
+                            Subscribe
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
