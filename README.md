@@ -121,7 +121,6 @@ Copy-Item .env.example .env
 
 Open `.env` and configure the required values using the variable names provided in `.env.example`.
 
-Do not commit your `.env` file or share real secret keys, database credentials, or Razorpay credentials.
 
 ### 7. Apply Database Migrations
 
