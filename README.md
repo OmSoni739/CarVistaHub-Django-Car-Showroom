@@ -1,74 +1,44 @@
-::: {align="center"}
 # CarVistaHub
 
-### A Django-Based Car Showroom Management Platform
+CarVistaHub is a Django-based car showroom management web application. It allows customers to explore vehicles, compare cars, manage wishlists, schedule test drives, and reserve vehicles through a Razorpay Test Mode payment workflow. It also provides dashboard functionality for customers and showroom managers.
 
-A web application for exploring and managing car inventory, comparing
-vehicles, saving favourites, scheduling test drives, and reserving cars
-through a secure payment workflow.
-
-**Built with Python · Django · SQLite · HTML · CSS · JavaScript ·
-Bootstrap**
-:::
-
-------------------------------------------------------------------------
-
-## 📌 Overview
-
-**CarVistaHub** is a full-stack car showroom management website
-developed using the Django framework. It brings essential showroom
-operations together in one platform, with dedicated experiences for
-customers and showroom managers.
-
-Customers can browse available vehicles, compare specifications, add
-cars to their wishlist, schedule test drives, and make car reservations.
-Managers can access dashboard features to oversee showroom activity and
-review vehicle reservation records.
-
-The project was developed as an academic full-stack web development
-project, with an emphasis on Django's Model--View--Template (MVT)
-architecture, database operations, authentication, and practical
-frontend integration.
-
-## ✨ Key Features
+## Features
 
 ### Customer Features
-
--   **User Authentication** -- Register, log in, and access a customer
-    account.
--   **Car Inventory** -- Browse vehicles with details, specifications,
-    brands, and images.
--   **Vehicle Comparison** -- Compare selected cars to evaluate their
-    features.
--   **Wishlist** -- Save favourite vehicles for later.
--   **Test Drive Booking** -- Schedule test-drive appointments.
--   **Car Reservation** -- Reserve a vehicle through the online booking
-    workflow.
--   **Online Payment** -- Razorpay integration configured for Test Mode.
--   **Customer Dashboard** -- Access vehicle reservations and test-drive
-    appointments.
+- User registration, login, and logout
+- Browse car inventory with vehicle details, specifications, brands, and images
+- Compare multiple vehicles
+- Add and remove cars from a wishlist
+- Schedule test-drive appointments
+- Reserve vehicles through the car booking workflow
+- Razorpay integration for car reservation payments (Test Mode)
+- Customer dashboard
+- Separate pages for vehicle reservations and test-drive appointments
 
 ### Manager Features
+- Manager dashboard
+- View vehicle reservation records
+- Read-only access to customer vehicle reservation information
 
--   **Manager Dashboard** -- Access showroom management information.
--   **Vehicle Reservation Records** -- Review customer vehicle
-    reservation details through a read-only view.
+### Inventory
+- Car catalogue containing 32 vehicles across 8 brands
+- Vehicle data managed through Django models
+- Public catalogue images stored in the media directory
+- Inventory import through a custom Django management command
 
-## 🧰 Technology Stack
+## Tech Stack
 
-  Area                Technology
-  ------------------- --------------------------------------------------
-  Backend             Python, Django
-  Frontend            HTML5, CSS3, JavaScript, Bootstrap
-  Database            SQLite
-  Authentication      Django Authentication
-  Payment Gateway     Razorpay (Test Mode)
-  Configuration       python-decouple
-  Development Tools   Visual Studio Code / compatible IDE, Git, GitHub
+- Python 3
+- Django
+- SQLite
+- HTML5, CSS3, JavaScript
+- Bootstrap
+- Razorpay Payment Gateway (Test Mode)
+- python-decouple for environment-based configuration
 
-## 🏗️ Project Structure
+## Project Structure
 
-``` text
+```text
 CarVistaHub/
 │
 ├── apps/
@@ -80,44 +50,43 @@ CarVistaHub/
 │   └── dashboard/
 │
 ├── autohub/
-│   └── Django project configuration
+│   ├── settings.py
+│   ├── urls.py
+│   └── ...
 │
 ├── media/
-│   └── cars/                 # Public car catalogue images
+│   └── cars/
 │
-├── static/                   # CSS, JavaScript and static assets
-├── templates/                # Django HTML templates
+├── static/
+├── templates/
 │
-├── .env.example              # Environment variable template
+├── .env.example
 ├── .gitignore
-├── ATTRIBUTION.md            # Image credits and licence information
+├── ATTRIBUTION.md
 ├── requirements.txt
+├── CarVistaHub_26_Car_Inventory_Research.xlsx
 └── manage.py
 ```
 
-> The local SQLite database, environment file, private customer uploads,
-> and development backups are intentionally excluded from the
-> repository.
-
-## ⚙️ Getting Started
-
-Follow these steps to run CarVistaHub on your local machine.
+## Local Setup
 
 ### 1. Clone the Repository
 
-``` bash
+```powershell
 git clone https://github.com/OmSoni739/CarVistaHub-Django-Car-Showroom.git
 ```
 
-### 2. Open the Project Folder
+### 2. Go to the Project Directory
 
-``` bash
+```powershell
 cd CarVistaHub-Django-Car-Showroom
 ```
 
+Make sure the terminal is in the directory containing `manage.py`.
+
 ### 3. Create a Virtual Environment
 
-``` bash
+```powershell
 python -m venv venv
 ```
 
@@ -125,148 +94,165 @@ python -m venv venv
 
 **Windows PowerShell:**
 
-``` powershell
+```powershell
 .\venv\Scripts\Activate.ps1
 ```
 
-If PowerShell blocks script execution, you can use Command Prompt
-instead:
+If PowerShell blocks script execution, use Command Prompt:
 
-``` cmd
+```cmd
 venv\Scripts\activate.bat
 ```
 
 ### 5. Install Dependencies
 
-``` bash
+```powershell
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
 ### 6. Configure Environment Variables
 
-Create your local `.env` file from the provided example:
+Create a local `.env` file using the example file:
 
-**Windows PowerShell:**
-
-``` powershell
+```powershell
 Copy-Item .env.example .env
 ```
 
-Open `.env` and enter your own local configuration values. Follow the
-variable names and format in `.env.example`.
+Open `.env` and configure the required values using the variable names provided in `.env.example`.
 
-**Important:** Never commit your `.env` file or publish real Django
-secret keys, Razorpay credentials, passwords, or other private values.
+Do not commit your `.env` file or share real secret keys, database credentials, or Razorpay credentials.
 
 ### 7. Apply Database Migrations
 
-``` bash
+```powershell
 python manage.py migrate
 ```
 
-### 8. Create an Admin Account
+This creates and updates the local SQLite database using the project's migrations.
 
-``` bash
+### 8. Create a Superuser (Optional)
+
+To access the Django admin site, create an administrator account:
+
+```powershell
 python manage.py createsuperuser
 ```
 
-Follow the prompts to create your Django administrator account.
+Follow the prompts in the terminal.
 
-### 9. Run the Development Server
+### 9. Import Car Inventory
 
-``` bash
-python manage.py runserver
-```
+The repository includes the inventory research workbook:
 
-Open the following address in your browser:
+`CarVistaHub_26_Car_Inventory_Research.xlsx`
 
-``` text
-http://127.0.0.1:8000/
-```
+To import the prepared vehicle inventory, run:
 
-## 🗃️ Car Inventory Data
-
-The repository includes the `CarVistaHub_26_Car_Inventory_Research.xlsx`
-workbook used during the vehicle inventory preparation process.
-
-The original development database is not included in this repository. A
-fresh setup creates a new local SQLite database when migrations are
-applied. If you want to populate the catalogue, use the project's car
-inventory import management command:
-
-``` bash
+```powershell
 python manage.py import_car_inventory
 ```
 
-Run the command from the project root. Review the command implementation
-and workbook requirements if your local setup needs additional input or
-configuration.
+Run this command from the project root, after applying migrations. The command uses the project's inventory import logic and expected workbook/input location.
 
-## 💳 Payment Integration
+### 10. Run the Development Server
 
-CarVistaHub integrates **Razorpay in Test Mode** for the car reservation
-payment workflow.
+```powershell
+python manage.py runserver
+```
 
--   Test Mode is intended for development and demonstration.
--   Test credentials must be configured locally through environment
-    variables.
--   Test Drive bookings are separate from paid car reservations.
--   The project is not configured as a live payment service.
+Open the application in your browser:
 
-Do not add live payment credentials to source code or commit them to
-GitHub.
+```text
+http://127.0.0.1:8000/
+```
 
-## 🔐 Security and Configuration
+## Default URLs
 
--   Sensitive environment files and local database files are excluded
-    using `.gitignore`.
--   `.env.example` provides a template without real credentials.
--   Private customer uploads and local backups are not part of the
-    public source repository.
--   Public vehicle catalogue images are included with attribution
-    details in [`ATTRIBUTION.md`](ATTRIBUTION.md).
+| Page | URL |
+|---|---|
+| Application | `http://127.0.0.1:8000/` |
+| Django Admin | `http://127.0.0.1:8000/admin/` |
 
-Before deploying this project, configure a strong, unique Django
-`SECRET_KEY`, set `DEBUG=False`, configure `ALLOWED_HOSTS`, use
-production-grade database and static/media storage settings, and review
-all security settings and credentials. Do not use development fallback
-secrets in production.
+Other customer and manager pages are available through the application's navigation after signing in.
 
-## 🧠 What I Learned
+## Payment Integration
 
-Working on CarVistaHub provided practical experience with:
+CarVistaHub uses **Razorpay Test Mode** for the car reservation payment workflow.
 
--   Building a web application using Django's MVT architecture.
--   Designing Django models and managing database migrations.
--   Implementing user authentication and role-based access.
--   Connecting frontend templates with backend views.
--   Handling vehicle inventory and image uploads.
--   Building booking, wishlist, and comparison workflows.
--   Integrating a payment gateway in Test Mode.
--   Organising a multi-app Django project.
--   Using Git and GitHub for source-code version control.
+- Test Mode is intended for development and demonstration.
+- Configure the required Razorpay test credentials through the local environment file.
+- Do not place API keys directly in source code.
+- Test-drive appointments are a separate workflow and do not require payment.
+- This repository is not configured as a live payment service.
 
-## 🚀 Future Improvements
+## Database and Media
 
-Potential areas for future development include:
+- **Database:** SQLite (`db.sqlite3`) is created locally when migrations are applied.
+- **Car images:** Public vehicle catalogue images are stored under `media/cars/`.
+- **Private uploads and local database files:** These are not included in the public repository.
+- **Image credits:** Refer to [`ATTRIBUTION.md`](ATTRIBUTION.md) for image attribution and licence details.
 
--   Production deployment with secure environment configuration.
--   Improved search, filtering, and sorting for vehicle inventory.
--   Enhanced mobile responsiveness and accessibility.
--   Automated testing for core customer and manager workflows.
--   Production-ready payment configuration and transaction monitoring.
+The original development database is intentionally excluded. A fresh clone starts with a new local database.
 
-## 👨‍💻 Author
+## Useful Django Commands
+
+Check the project configuration:
+
+```powershell
+python manage.py check
+```
+
+Check whether model changes require migrations:
+
+```powershell
+python manage.py makemigrations --check --dry-run
+```
+
+Create migrations after making model changes:
+
+```powershell
+python manage.py makemigrations
+```
+
+Apply migrations:
+
+```powershell
+python manage.py migrate
+```
+
+Start the development server:
+
+```powershell
+python manage.py runserver
+```
+
+## Security Notes
+
+- Keep `.env` files and real credentials private.
+- Use a unique, strong Django `SECRET_KEY` from the environment.
+- Do not use development fallback secrets in production.
+- Set `DEBUG=False` and configure `ALLOWED_HOSTS` before deployment.
+- Configure production-grade database, static-file, and media-file handling before hosting.
+- Review payment and authentication settings before making the application publicly available.
+
+## Future Improvements
+
+- Deploy the application with production-ready Django settings.
+- Add automated tests for authentication, bookings, and payment workflows.
+- Improve vehicle search, filtering, and sorting.
+- Further enhance responsive layouts and accessibility.
+- Add production payment configuration and transaction monitoring.
+
+## Author
 
 **Om Soni**
 
--   GitHub: [@OmSoni739](https://github.com/OmSoni739)
+- GitHub: [@OmSoni739](https://github.com/OmSoni739)
+- Repository: [CarVistaHub-Django-Car-Showroom](https://github.com/OmSoni739/CarVistaHub-Django-Car-Showroom)
 
-------------------------------------------------------------------------
+---
 
-::: {align="center"}
-**CarVistaHub --- Explore. Compare. Book.**
+**CarVistaHub — Explore. Compare. Book.**
 
 *Developed as an academic project.*
-:::
