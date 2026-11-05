@@ -170,8 +170,11 @@ http://127.0.0.1:8000/
 
 | Page | URL |
 |---|---|
-| Application | `http://127.0.0.1:8000/` |
-| Django Admin | `http://127.0.0.1:8000/admin/` |
+| Home Page | `http://127.0.0.1:8000/` |
+| Car Inventory | `http://127.0.0.1:8000/cars` |
+| Login | `http://127.0.0.1:8000/accounts/login/` |
+| Register | `http://127.0.0.1:8000/accounts/register/` |
+| Admin | `http://127.0.0.1:8000/admin/` |
 
 Other customer and manager pages are available through the application's navigation after signing in.
 
