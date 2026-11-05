@@ -82,8 +82,6 @@ git clone https://github.com/OmSoni739/CarVistaHub-Django-Car-Showroom.git
 cd CarVistaHub-Django-Car-Showroom
 ```
 
-Make sure the terminal is in the directory containing `manage.py`.
-
 ### 3. Create a Virtual Environment
 
 ```powershell
@@ -128,8 +126,6 @@ Open `.env` and configure the required values using the variable names provided 
 python manage.py migrate
 ```
 
-This creates and updates the local SQLite database using the project's migrations.
-
 ### 8. Create a Superuser (Optional)
 
 To access the Django admin site, create an administrator account:
@@ -144,15 +140,13 @@ Follow the prompts in the terminal.
 
 The repository includes the inventory research workbook:
 
-`CarVistaHub_26_Car_Inventory_Research.xlsx`
+`CarVistaHub_32_Car_Inventory_Research.xlsx`
 
 To import the prepared vehicle inventory, run:
 
 ```powershell
 python manage.py import_car_inventory
 ```
-
-Run this command from the project root, after applying migrations. The command uses the project's inventory import logic and expected workbook/input location.
 
 ### 10. Run the Development Server
 
@@ -194,18 +188,3 @@ CarVistaHub uses **Razorpay Test Mode** for the car reservation payment workflow
 - **Car images:** Public vehicle catalogue images are stored under `media/cars/`.
 - **Private uploads and local database files:** These are not included in the public repository.
 - **Image credits:** Refer to [`ATTRIBUTION.md`](ATTRIBUTION.md) for image attribution and licence details.
-
-The original development database is intentionally excluded. A fresh clone starts with a new local database.
-
-## Author
-
-**Om Soni**
-
-- GitHub: [@OmSoni739](https://github.com/OmSoni739)
-- Repository: [CarVistaHub-Django-Car-Showroom](https://github.com/OmSoni739/CarVistaHub-Django-Car-Showroom)
-
----
-
-**CarVistaHub — Explore. Compare. Book.**
-
-*Developed as an academic project.*
