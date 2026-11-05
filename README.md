@@ -197,55 +197,6 @@ CarVistaHub uses **Razorpay Test Mode** for the car reservation payment workflow
 
 The original development database is intentionally excluded. A fresh clone starts with a new local database.
 
-## Useful Django Commands
-
-Check the project configuration:
-
-```powershell
-python manage.py check
-```
-
-Check whether model changes require migrations:
-
-```powershell
-python manage.py makemigrations --check --dry-run
-```
-
-Create migrations after making model changes:
-
-```powershell
-python manage.py makemigrations
-```
-
-Apply migrations:
-
-```powershell
-python manage.py migrate
-```
-
-Start the development server:
-
-```powershell
-python manage.py runserver
-```
-
-## Security Notes
-
-- Keep `.env` files and real credentials private.
-- Use a unique, strong Django `SECRET_KEY` from the environment.
-- Do not use development fallback secrets in production.
-- Set `DEBUG=False` and configure `ALLOWED_HOSTS` before deployment.
-- Configure production-grade database, static-file, and media-file handling before hosting.
-- Review payment and authentication settings before making the application publicly available.
-
-## Future Improvements
-
-- Deploy the application with production-ready Django settings.
-- Add automated tests for authentication, bookings, and payment workflows.
-- Improve vehicle search, filtering, and sorting.
-- Further enhance responsive layouts and accessibility.
-- Add production payment configuration and transaction monitoring.
-
 ## Author
 
 **Om Soni**
