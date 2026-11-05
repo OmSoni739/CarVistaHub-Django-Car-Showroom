@@ -126,17 +126,7 @@ Open `.env` and configure the required values using the variable names provided 
 python manage.py migrate
 ```
 
-### 8. Create a Superuser (Optional)
-
-To access the Django admin site, create an administrator account:
-
-```powershell
-python manage.py createsuperuser
-```
-
-Follow the prompts in the terminal.
-
-### 9. Import Car Inventory
+### 8. Import Car Inventory
 
 The repository includes the inventory research workbook:
 
@@ -148,7 +138,7 @@ To import the prepared vehicle inventory, run:
 python manage.py import_car_inventory
 ```
 
-### 10. Run the Development Server
+### 9. Run the Development Server
 
 ```powershell
 python manage.py runserver
