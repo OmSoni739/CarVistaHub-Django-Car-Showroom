@@ -71,25 +71,19 @@ CarVistaHub/
 
 ## Local Setup
 
-### 1. Clone the Repository
-
-```powershell
-git clone https://github.com/OmSoni739/CarVistaHub-Django-Car-Showroom.git
-```
-
-### 2. Go to the Project Directory
+### 1. Go to the Project Directory
 
 ```powershell
 cd CarVistaHub-Django-Car-Showroom
 ```
 
-### 3. Create a Virtual Environment
+### 2. Create a Virtual Environment
 
 ```powershell
 python -m venv venv
 ```
 
-### 4. Activate the Virtual Environment
+### 3. Activate the Virtual Environment
 
 **Windows PowerShell:**
 
@@ -103,14 +97,14 @@ If PowerShell blocks script execution, use Command Prompt:
 venv\Scripts\activate.bat
 ```
 
-### 5. Install Dependencies
+### 4. Install Dependencies
 
 ```powershell
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 6. Configure Environment Variables
+### 5. Configure Environment Variables
 
 Create a local `.env` file using the example file:
 
@@ -118,16 +112,13 @@ Create a local `.env` file using the example file:
 Copy-Item .env.example .env
 ```
 
-Open `.env` and configure the required values using the variable names provided in `.env.example`.
-
-
-### 7. Apply Database Migrations
+### 6. Apply Database Migrations
 
 ```powershell
 python manage.py migrate
 ```
 
-### 8. Import Car Inventory
+### 7. Import Car Inventory
 
 The repository includes the inventory research workbook:
 
@@ -139,7 +130,7 @@ To import the prepared vehicle inventory, run:
 python manage.py import_car_inventory
 ```
 
-### 9. Run the Development Server
+### 8. Run the Development Server
 
 ```powershell
 python manage.py runserver
