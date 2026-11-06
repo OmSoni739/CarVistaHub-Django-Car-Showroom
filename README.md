@@ -16,7 +16,8 @@ CarVistaHub is a Django-based car showroom management web application. It allows
 - Separate pages for vehicle reservations and test-drive appointments
 
 ### Manager Features
-- Manager dashboard
+- Dedicated dashboard to access and manage showroom activities.
+- View and manage customer test-drive appointment requests.
 - View vehicle reservation records
 - Read-only access to customer vehicle reservation information
 
