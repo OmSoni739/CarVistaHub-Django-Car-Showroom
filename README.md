@@ -150,7 +150,8 @@ http://127.0.0.1:8000/
 | Car Inventory | `http://127.0.0.1:8000/cars` |
 | Login | `http://127.0.0.1:8000/accounts/login/` |
 | Register | `http://127.0.0.1:8000/accounts/register/` |
-| Admin | `http://127.0.0.1:8000/admin/` |
+| Compare Cars | `http://127.0.0.1:8000/compare/` |
+| Wishlist | `http://127.0.0.1:8000/wishlist/` |
 
 Other customer and manager pages are available through the application's navigation after signing in.
 
