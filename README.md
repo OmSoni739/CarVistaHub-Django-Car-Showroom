@@ -160,7 +160,6 @@ CarVistaHub uses **Razorpay Test Mode** for the car reservation payment workflow
 
 - Test Mode is intended for development and demonstration.
 - Configure the required Razorpay test credentials through the local environment file.
-- Do not place API keys directly in source code.
 - Test-drive appointments are a separate workflow and do not require payment.
 - This repository is not configured as a live payment service.
 
