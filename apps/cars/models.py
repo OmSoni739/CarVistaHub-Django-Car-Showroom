@@ -90,7 +90,7 @@ class Car(models.Model):
     # Technical & Performance Specifications (Structured)
     power = models.CharField(max_length=60, blank=True, verbose_name="Max Power")
     torque = models.CharField(max_length=60, blank=True, verbose_name="Max Torque")
-    drivetrain = models.CharField(max_length=50, blank=True, default='', verbose_name="Drivetrain")
+    drivetrain = models.CharField(max_length=200, blank=True, default='', verbose_name="Drivetrain")
     model_year = models.CharField(max_length=50, blank=True, default='', verbose_name="Model Year / Version")
 
     # Dimensions & Capacity (mm / Litres)
