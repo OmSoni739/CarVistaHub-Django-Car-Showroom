@@ -4,9 +4,9 @@ Project-level routing delegating to the 6 application modules.
 """
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
-from django.conf.urls.static import static
+from django.views.static import serve
 
 # CarVistaHub Django Admin Branding
 admin.site.site_header = "CarVistaHub Administration"
@@ -26,9 +26,14 @@ urlpatterns = [
     path('dashboard/', include('apps.dashboard.urls')),
 ]
 
-# Serve media & static files in development mode
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files (public car catalogue images)
+# NOTE: For low-traffic demonstration/portfolio hosting on Render, Django's static.serve
+# view is used to serve public images from MEDIA_ROOT across both DEBUG=True and DEBUG=False.
+# In high-traffic production environments, media should be offloaded to cloud
+# object storage (e.g., Cloudflare R2 / AWS S3) or a dedicated CDN / reverse proxy.
+urlpatterns += [
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+]
 
 handler404 = 'apps.cars.views.custom_404_view'
 

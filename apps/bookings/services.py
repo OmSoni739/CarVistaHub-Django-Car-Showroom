@@ -490,11 +490,16 @@ def get_showroom_calendar_availability(start_date, end_date, user=None, car_id=N
                             v_display = "Document Verified by Manager"
                         elif v_status == TestDriveBooking.LicenseVerificationStatus.REJECTED:
                             v_display = "Document Rejected"
+                        elif not has_license:
+                            v_display = "Licence Not Provided"
                         else:
                             v_display = "Pending Review"
 
                         can_confirm = bool(
-                            res.booking.license_verification_status == TestDriveBooking.LicenseVerificationStatus.VERIFIED
+                            (
+                                res.booking.license_verification_status == TestDriveBooking.LicenseVerificationStatus.VERIFIED
+                                or not res.booking.driving_license_image
+                            )
                             and res.booking.status == TestDriveBooking.Status.PENDING
                             and res.reservation_type in [
                                 ActiveSlotReservation.ReservationType.PENDING,
@@ -615,14 +620,14 @@ def validate_driving_license_image(file):
     Validates customer-uploaded front-side photo of their Indian Driving Licence.
 
     Enforces:
-      1. Mandatory presence (file exists and size > 0).
+      1. Optional presence (if not provided, validation passes).
       2. File size limit: maximum 5 MB (5 * 1024 * 1024 bytes).
       3. File extension whitelist: .jpg, .jpeg, .png.
       4. MIME type check: image/jpeg, image/png.
       5. Real image decoding and integrity verification via Pillow (PIL.Image).
     """
     if not file:
-        raise ValidationError("Driving licence photograph is compulsory. Please upload the front side of your licence.")
+        return
 
     # 1. Size check (5 MB limit)
     max_size = 5 * 1024 * 1024
@@ -783,10 +788,9 @@ def create_customer_test_drive_booking(
     if not terms_agreed:
         raise ValidationError({'terms_agreed': "You must accept the Terms and Conditions to submit a booking."})
 
-    # 3. Driving licence validation: Mandatory front-side image upload
-    if not license_image:
-        raise ValidationError({'license_image': "Upload of the front side of your original driving licence is compulsory."})
-    validate_driving_license_image(license_image)
+    # 3. Driving licence validation: Optional front-side image upload
+    if license_image:
+        validate_driving_license_image(license_image)
 
     # 4. Validate selected car from database
     if not car or not getattr(car, 'is_available', False):
@@ -980,6 +984,9 @@ def manager_update_license_verification(booking, manager, action, reason=''):
         raise ValidationError(f"Cannot perform verification actions on a {booking.get_status_display().lower()} booking.")
 
     if action_upper == 'VERIFY':
+        if not booking.driving_license_image:
+            raise ValidationError("Cannot verify a driving licence document because no licence photo was uploaded for this appointment.")
+
         if booking.status == TestDriveBooking.Status.REJECTED or booking.license_verification_status == TestDriveBooking.LicenseVerificationStatus.REJECTED:
             raise ValidationError("Cannot verify a driving licence document for an appointment that has been rejected.")
 
@@ -1080,9 +1087,10 @@ def manager_update_license_verification(booking, manager, action, reason=''):
 def validate_booking_confirmation(booking):
     """
     Enforces the safety rule:
-    Do not permit booking confirmation unless the licence verification status is VERIFIED.
+    Do not permit booking confirmation unless the licence verification status is VERIFIED
+    (when a driving licence document was uploaded).
     """
-    if booking.license_verification_status != TestDriveBooking.LicenseVerificationStatus.VERIFIED:
+    if booking.driving_license_image and booking.license_verification_status != TestDriveBooking.LicenseVerificationStatus.VERIFIED:
         raise ValidationError(
             "Booking cannot be confirmed until the customer's driving licence document "
             "has been verified by the Showroom Manager (status must be VERIFIED)."
@@ -1096,7 +1104,7 @@ def manager_confirm_test_drive_booking(booking, manager):
     Enforces:
       1. Only authorized Showroom Managers / Admins can confirm appointments.
       2. Manager assignment check if assigned.
-      3. Driving licence verification status must be strictly VERIFIED.
+      3. Driving licence verification status must be strictly VERIFIED if licence uploaded.
       4. Appointment must be in a valid pre-confirmation state (PENDING).
       5. Prevents repeated confirmation or confirmation of rejected/cancelled/expired bookings.
       6. Verifies that the correct ActiveSlotReservation belongs to this booking and is not expired.
@@ -1115,8 +1123,8 @@ def manager_confirm_test_drive_booking(booking, manager):
         if booking.assigned_manager_id and booking.assigned_manager_id != manager.id and not manager.is_staff:
             raise PermissionDenied("Access denied. You are not the assigned Showroom Manager for this booking.")
 
-    # 1. Licence verification requirement
-    if booking.license_verification_status != TestDriveBooking.LicenseVerificationStatus.VERIFIED:
+    # 1. Licence verification requirement (if document was uploaded)
+    if booking.driving_license_image and booking.license_verification_status != TestDriveBooking.LicenseVerificationStatus.VERIFIED:
         raise ValidationError(
             "Booking cannot be confirmed until the customer's driving licence document "
             "has been verified by the Showroom Manager (licence verification status must be VERIFIED)."
@@ -1202,6 +1210,11 @@ def manager_confirm_test_drive_booking(booking, manager):
                 'message': (
                     "Your Driving Licence has been reviewed and your test-drive appointment "
                     "has been confirmed by the Showroom Manager."
+                    if booking.driving_license_image
+                    else (
+                        "Your showroom test-drive appointment has been confirmed by the Showroom Manager. "
+                        "Please arrive 10 minutes prior to your slot and bring your original driving licence."
+                    )
                 ),
                 'booking_reference': booking.booking_number,
                 'car_title': car_name,

@@ -1139,9 +1139,9 @@ class Phase3ACustomerBookingSubmissionTests(TestCase):
         self.assertIn("Only registered customers", response.json()['error'])
         self.assertEqual(TestDriveBooking.objects.count(), 0)
 
-    def test_license_image_is_compulsory(self):
+    def test_license_image_is_optional_booking_succeeds(self):
         """
-        Requirement 5: Driving licence image upload is compulsory; missing is rejected with 400.
+        Driving licence image upload is optional; booking without license_image succeeds (201 Created).
         """
         self.client.force_login(self.customer)
         payload = {
@@ -1151,8 +1151,11 @@ class Phase3ACustomerBookingSubmissionTests(TestCase):
             'terms_agreed': True,
         }
         res = self.client.post(self.api_book_url, payload)
-        self.assertEqual(res.status_code, 400)
-        self.assertEqual(TestDriveBooking.objects.count(), 0)
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(TestDriveBooking.objects.count(), 1)
+        booking = TestDriveBooking.objects.first()
+        self.assertFalse(bool(booking.driving_license_image))
+        self.assertEqual(booking.status, TestDriveBooking.Status.PENDING)
 
     def test_valid_looking_dl_saved_with_pending_verification_never_verified(self):
         """
@@ -1534,8 +1537,8 @@ class DrivingLicenseUploadAndManagerVerificationTests(TestCase):
         self.target_date_str = self.target_date.strftime('%Y-%m-%d')
         self.api_book_url = reverse('bookings:api_booking_submission')
 
-    def test_mandatory_upload_missing_image_rejected(self):
-        """Mandatory upload: submission without license_image returns 400 Bad Request."""
+    def test_optional_upload_missing_image_succeeds(self):
+        """Optional upload: submission without license_image returns 201 Created."""
         self.client.force_login(self.customer)
         payload = {
             'car_id': self.car.id,
@@ -1544,8 +1547,10 @@ class DrivingLicenseUploadAndManagerVerificationTests(TestCase):
             'terms_agreed': True,
         }
         res = self.client.post(self.api_book_url, payload)
-        self.assertEqual(res.status_code, 400)
-        self.assertEqual(TestDriveBooking.objects.count(), 0)
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(TestDriveBooking.objects.count(), 1)
+        booking = TestDriveBooking.objects.first()
+        self.assertFalse(bool(booking.driving_license_image))
 
     def test_invalid_file_type_rejected(self):
         """Invalid file extension (.pdf/.txt) is rejected with 400 Bad Request."""
@@ -2031,12 +2036,28 @@ class DrivingLicenseUploadAndManagerVerificationTests(TestCase):
         b_details = slot_12['booking_details']
         self.assertFalse(b_details['has_license_image'])
         self.assertIsNone(b_details['license_image_url'])
+        self.assertEqual(b_details['license_verification_display'], 'Licence Not Provided')
+        self.assertTrue(b_details['can_confirm'])
         self.assertEqual(b_details['booking_number'], old_booking.booking_number)
 
         # Requesting secure document for booking without image returns 404 cleanly
         doc_url = reverse('bookings:secure_license_image', kwargs={'booking_id': old_booking.id})
         res_doc = self.client.get(doc_url)
         self.assertEqual(res_doc.status_code, 404)
+
+        # Manager attempting to VERIFY a document on a booking with no licence uploaded fails cleanly
+        verify_url = reverse('bookings:manager_license_action', kwargs={'booking_id': old_booking.id})
+        res_verify = self.client.post(verify_url, {'action': 'VERIFY'}, content_type='application/json')
+        self.assertEqual(res_verify.status_code, 400)
+        self.assertIn('no licence', res_verify.json()['error'].lower())
+
+        # Manager can directly confirm a booking without an uploaded licence
+        confirm_url = reverse('bookings:manager_booking_confirm', kwargs={'booking_id': old_booking.id})
+        res_confirm = self.client.post(confirm_url, content_type='application/json')
+        self.assertEqual(res_confirm.status_code, 200)
+        self.assertTrue(res_confirm.json()['success'])
+        old_booking.refresh_from_db()
+        self.assertEqual(old_booking.status, TestDriveBooking.Status.CONFIRMED)
 
 
 class RollingSevenDayBookingWindowTests(TestCase):

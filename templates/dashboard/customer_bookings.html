@@ -290,6 +290,10 @@
                                                 <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
                                                     <span class="material-symbols-outlined fs-8 align-middle">cancel</span> Document Rejected
                                                 </span>
+                                            {% elif not b.driving_license_image %}
+                                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                                    <span class="material-symbols-outlined fs-8 align-middle">info</span> Licence Not Provided
+                                                </span>
                                             {% else %}
                                                 <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
                                                     <span class="material-symbols-outlined fs-8 align-middle">hourglass_top</span> Pending Review

@@ -32,8 +32,7 @@
                         </div>
                         <h5 class="fw-bold text-dark mb-1">Unlock Test Drive Availability</h5>
                         <p class="text-secondary fs-7 mb-3 px-2">
-                            Sign up or log in to explore available showroom appointments and book your preferred time
-                            slot.
+                            Sign up or log in to explore available showroom appointments and book your preferred time slot.
                         </p>
                         <div class="d-flex justify-content-center gap-2 flex-wrap mb-2">
                             <a href="{% url 'accounts:register' %}?next={{ request.path }}"
@@ -50,8 +49,7 @@
                             </a>
                         </div>
                         <p class="fs-8 text-muted mb-0">
-                            Sign up or log in to access our Test Drive feature and book your preferred showroom
-                            appointment.
+                            Sign up or log in to access our Test Drive feature and book your preferred showroom appointment.
                         </p>
                     </div>
                     {% endif %}
@@ -260,16 +258,15 @@
                         <div class="mb-3">
                             <label for="inputDrivingLicenseImage"
                                 class="form-label fs-8 fw-semibold text-secondary mb-1">
-                                Upload Driving Licence (Front Side) <span class="text-danger">*</span>
+                                Upload Driving Licence (Front Side) <span class="text-muted fw-normal">(Optional)</span>
                             </label>
                             <input type="file" class="form-control form-control-sm" id="inputDrivingLicenseImage"
-                                name="license_image" accept="image/jpeg,image/jpg,image/png" required>
+                                name="license_image" accept="image/jpeg,image/jpg,image/png">
                             <div class="form-text fs-9 text-muted">
-                                Upload a clear photo of the front side of your original Indian Driving Licence. Ensure
-                                all important details are readable.
+                                Optional. If provided, upload a clear photo of the front side of your original Indian Driving Licence (JPG or PNG, max 5 MB).
                             </div>
                             <div class="invalid-feedback fs-8" id="drivingLicenseFeedback">
-                                Please select a clear photo (JPG or PNG, max 5 MB) of the front side of your driving
+                                Please select a valid photo (JPG or PNG, max 5 MB) of the front side of your driving
                                 licence.
                             </div>
                         </div>

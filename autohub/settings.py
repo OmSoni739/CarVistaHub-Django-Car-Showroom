@@ -7,6 +7,10 @@ Compatible with Django 5.x and Python 3.12+
 import os
 from pathlib import Path
 import sys
+try:
+    import dj_database_url
+except ImportError:
+    dj_database_url = None
 from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -18,13 +22,34 @@ sys.path.insert(0, str(BASE_DIR / 'apps'))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-autohub-default-dev-key-2026')
+# SECURITY WARNING: keep the secret key used in production secret!# Security settings
+SECRET_KEY = config(
+    'SECRET_KEY',
+    default='django-insecure-local-development-key'
+)
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost').split(',')
+if not DEBUG and SECRET_KEY.startswith('django-insecure'):
+    raise ValueError("A secure SECRET_KEY must be set in production.")
+
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in config(
+        'ALLOWED_HOSTS',
+        default='127.0.0.1,localhost'
+    ).split(',')
+    if host.strip()
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in config(
+        'CSRF_TRUSTED_ORIGINS',
+        default=''
+    ).split(',')
+    if origin.strip()
+]
 
 
 # Application definition
@@ -50,6 +75,7 @@ INSTALLED_APPS = [
     'apps.dashboard',
 ]
 
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -59,6 +85,13 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+try:
+    import whitenoise
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+except ImportError:
+    pass
+
 
 ROOT_URLCONF = 'autohub.urls'
 
@@ -82,17 +115,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'autohub.wsgi.application'
 
-
 # Database Configuration
-# Primary: MySQL Database using environment variables
-# Fallback: SQLite for local developer setup if USE_SQLITE is enabled in .env
-
-# Enable PyMySQL driver for MySQL compatibility
-try:
-    import pymysql
-    pymysql.install_as_MySQLdb()
-except ImportError:
-    pass
+# Local: SQLite
+# Production: PostgreSQL (Render)
+# Optional: MySQL
 
 USE_SQLITE = config('USE_SQLITE', default=True, cast=bool)
 
@@ -103,10 +129,30 @@ if USE_SQLITE:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
+elif config('DATABASE_URL', default=''):
+    DATABASES = {
+        'default': dj_database_url.parse(
+            config('DATABASE_URL'),
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
+    }
+
 else:
+    # MySQL configuration (optional)
+    try:
+        import pymysql
+        pymysql.install_as_MySQLdb()
+    except ImportError:
+        pass
+
     DATABASES = {
         'default': {
-            'ENGINE': config('DB_ENGINE', default='django.db.backends.mysql'),
+            'ENGINE': config(
+                'DB_ENGINE',
+                default='django.db.backends.mysql'
+            ),
             'NAME': config('DB_NAME', default='autohub_db'),
             'USER': config('DB_USER', default='root'),
             'PASSWORD': config('DB_PASSWORD', default='root'),
@@ -118,6 +164,7 @@ else:
             },
         }
     }
+
 
 
 # Custom User Model Support
@@ -159,10 +206,27 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+try:
+    import whitenoise
+    STATICFILES_STORAGE_BACKEND = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+except ImportError:
+    STATICFILES_STORAGE_BACKEND = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': STATICFILES_STORAGE_BACKEND,
+    },
+}
 
 
 # Media files (User Uploads, Car Images, License Uploads)
@@ -225,4 +289,21 @@ CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=not DEBUG, cast=bool)
 # 'same-origin-allow-popups' isolates the top document while permitting outgoing bank redirects.
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 
+# ==============================================================================
+# Production Security Settings
+# ==============================================================================
 
+# Tell Django that Render handles HTTPS through its reverse proxy.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Enable HTTPS-related security protections in production.
+SECURE_SSL_REDIRECT = not DEBUG
+
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+
+# Secure cookies in production, while allowing local HTTP development.
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'

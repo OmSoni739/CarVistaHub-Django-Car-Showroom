@@ -88,13 +88,13 @@ class CalendarAvailabilityResponseSerializer(serializers.Serializer):
 class CustomerBookingSubmissionSerializer(serializers.Serializer):
     """
     Validates customer test drive appointment booking submission payload.
-    Enforces required fields, mandatory front-side driving licence photo upload,
+    Enforces required fields, optional front-side driving licence photo upload,
     car availability, and compulsory terms agreement.
     """
     car_id = serializers.IntegerField(required=True)
     preferred_date = serializers.DateField(required=True)
     start_time = serializers.TimeField(required=True, format='%H:%M', input_formats=['%H:%M', '%H:%M:%S'])
-    license_image = serializers.ImageField(required=True)
+    license_image = serializers.ImageField(required=False, allow_null=True, default=None)
     driving_license_number = serializers.CharField(required=False, allow_blank=True, default='')
     customer_notes = serializers.CharField(required=False, allow_blank=True, default='')
     contact_phone = serializers.CharField(required=False, allow_blank=True, default='')
@@ -121,6 +121,8 @@ class CustomerBookingSubmissionSerializer(serializers.Serializer):
         return value
 
     def validate_license_image(self, value):
+        if not value:
+            return None
         from .services import validate_driving_license_image
         from django.core.exceptions import ValidationError as DjangoValidationError
         try:

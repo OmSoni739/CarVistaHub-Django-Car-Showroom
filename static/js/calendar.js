@@ -320,32 +320,28 @@
 
                     this.showFormAlert(null);
 
-                    // 1. Validate Driving Licence Image (mandatory front side)
-                    if (!this.inputDrivingLicenseImage || !this.inputDrivingLicenseImage.files || this.inputDrivingLicenseImage.files.length === 0) {
-                        if (this.inputDrivingLicenseImage) this.inputDrivingLicenseImage.classList.add('is-invalid');
-                        if (this.dlFeedback) this.dlFeedback.textContent = "Driving licence photograph is compulsory. Please upload the front side of your licence.";
-                        if (this.inputDrivingLicenseImage) this.inputDrivingLicenseImage.focus();
-                        return;
-                    }
+                    // 1. Validate Optional Driving Licence Image (if customer provided one)
+                    let file = null;
+                    if (this.inputDrivingLicenseImage && this.inputDrivingLicenseImage.files && this.inputDrivingLicenseImage.files.length > 0) {
+                        file = this.inputDrivingLicenseImage.files[0];
+                        const maxSize = 5 * 1024 * 1024; // 5 MB
 
-                    const file = this.inputDrivingLicenseImage.files[0];
-                    const maxSize = 5 * 1024 * 1024; // 5 MB
+                        if (file.size > maxSize) {
+                            if (this.inputDrivingLicenseImage) this.inputDrivingLicenseImage.classList.add('is-invalid');
+                            if (this.dlFeedback) this.dlFeedback.textContent = "File size exceeds 5 MB limit. Please upload an image under 5 MB in size.";
+                            if (this.inputDrivingLicenseImage) this.inputDrivingLicenseImage.focus();
+                            return;
+                        }
 
-                    if (file.size > maxSize) {
-                        if (this.inputDrivingLicenseImage) this.inputDrivingLicenseImage.classList.add('is-invalid');
-                        if (this.dlFeedback) this.dlFeedback.textContent = "File size exceeds 5 MB limit. Please upload an image under 5 MB in size.";
-                        if (this.inputDrivingLicenseImage) this.inputDrivingLicenseImage.focus();
-                        return;
-                    }
-
-                    const fileName = file.name.toLowerCase();
-                    const validExts = ['.jpg', '.jpeg', '.png'];
-                    const hasValidExt = validExts.some(ext => fileName.endsWith(ext));
-                    if (!hasValidExt) {
-                        if (this.inputDrivingLicenseImage) this.inputDrivingLicenseImage.classList.add('is-invalid');
-                        if (this.dlFeedback) this.dlFeedback.textContent = "Invalid file type. Only JPG, JPEG, and PNG images are accepted.";
-                        if (this.inputDrivingLicenseImage) this.inputDrivingLicenseImage.focus();
-                        return;
+                        const fileName = file.name.toLowerCase();
+                        const validExts = ['.jpg', '.jpeg', '.png'];
+                        const hasValidExt = validExts.some(ext => fileName.endsWith(ext));
+                        if (!hasValidExt) {
+                            if (this.inputDrivingLicenseImage) this.inputDrivingLicenseImage.classList.add('is-invalid');
+                            if (this.dlFeedback) this.dlFeedback.textContent = "Invalid file type. Only JPG, JPEG, and PNG images are accepted.";
+                            if (this.inputDrivingLicenseImage) this.inputDrivingLicenseImage.focus();
+                            return;
+                        }
                     }
 
                     if (this.inputDrivingLicenseImage) this.inputDrivingLicenseImage.classList.remove('is-invalid');
@@ -367,7 +363,9 @@
                     formData.append('car_id', parseInt(this.carId, 10));
                     formData.append('preferred_date', this.selectedSlot.date);
                     formData.append('start_time', this.selectedSlot.start_time);
-                    formData.append('license_image', file);
+                    if (file) {
+                        formData.append('license_image', file);
+                    }
                     if (this.inputCustomerNotes) {
                         formData.append('customer_notes', this.inputCustomerNotes.value.trim());
                     }
@@ -1423,24 +1421,43 @@
             // Verification status badge
             const vStatus = b.license_verification_status || 'PENDING';
             const bStatus = b.status || 'PENDING';
+            const hasLicense = Boolean(b.has_license_image);
+
+            if (custLicenseStatus) {
+                if (vStatus === 'VERIFIED') {
+                    custLicenseStatus.textContent = b.license_verification_display || 'Document Verified';
+                } else if (vStatus === 'REJECTED') {
+                    custLicenseStatus.textContent = b.license_verification_display || 'Document Rejected';
+                } else if (!hasLicense) {
+                    custLicenseStatus.textContent = 'Licence Not Provided';
+                } else {
+                    custLicenseStatus.textContent = b.license_verification_display || 'Pending Review';
+                }
+            }
 
             if (licenseBadge) {
-                licenseBadge.textContent = b.license_verification_display || (vStatus === 'VERIFIED' ? 'Document Verified by Manager' : (vStatus === 'REJECTED' ? 'Document Rejected' : 'Pending Review'));
                 if (vStatus === 'VERIFIED') {
+                    licenseBadge.textContent = b.license_verification_display || 'Document Verified by Manager';
                     licenseBadge.className = 'badge bg-success text-white px-2 py-1 fs-9';
                 } else if (vStatus === 'REJECTED') {
+                    licenseBadge.textContent = b.license_verification_display || 'Document Rejected';
                     licenseBadge.className = 'badge bg-danger text-white px-2 py-1 fs-9';
+                } else if (!hasLicense) {
+                    licenseBadge.textContent = 'Licence Not Provided';
+                    licenseBadge.className = 'badge bg-secondary text-white px-2 py-1 fs-9';
                 } else {
+                    licenseBadge.textContent = b.license_verification_display || 'Pending Review';
                     licenseBadge.className = 'badge bg-warning text-dark px-2 py-1 fs-9';
                 }
             }
 
             // Manage State Action Sections:
-            // 1. PENDING / PENDING -> Verify & Reject buttons visible
-            // 2. VERIFIED / PENDING -> Confirm Driving Test button visible
-            // 3. Any / CONFIRMED -> Confirmed notice badge and Mark as Completed button visible
-            // 4. Any / COMPLETED -> Completed notice badge visible
-            // 5. Any / REJECTED -> Rejected notice badge visible
+            // 1. With License & PENDING / PENDING -> Verify & Reject buttons visible
+            // 2. Without License & PENDING -> Confirm Driving Test button visible (direct confirmation)
+            // 3. With License & VERIFIED / PENDING -> Confirm Driving Test button visible
+            // 4. Any / CONFIRMED -> Confirmed notice badge and Mark as Completed button visible
+            // 5. Any / COMPLETED -> Completed notice badge visible
+            // 6. Any / REJECTED -> Rejected notice badge visible
             const licenseActions = document.getElementById('inspectLicenseActions');
             const confirmSection = document.getElementById('inspectConfirmSection');
             const confirmedNotice = document.getElementById('inspectConfirmedNotice');
@@ -1472,21 +1489,40 @@
                 }
             } else if (bStatus === 'REJECTED' || vStatus === 'REJECTED') {
                 if (rejectedNotice) rejectedNotice.classList.remove('d-none');
+            } else if (!hasLicense && bStatus === 'PENDING') {
+                // When customer did not upload a licence, skip document review actions and show appointment confirmation
+                if (confirmSection) {
+                    confirmSection.classList.remove('d-none');
+                    const confirmHelp = confirmSection.querySelector('.fs-9.text-muted.text-center');
+                    if (confirmHelp) {
+                        confirmHelp.textContent = 'Licence not uploaded (verify original in person at showroom). Ready for showroom confirmation.';
+                    }
+                }
             } else if (vStatus === 'VERIFIED' && bStatus === 'PENDING') {
-                if (confirmSection) confirmSection.classList.remove('d-none');
+                if (confirmSection) {
+                    confirmSection.classList.remove('d-none');
+                    const confirmHelp = confirmSection.querySelector('.fs-9.text-muted.text-center');
+                    if (confirmHelp) {
+                        confirmHelp.textContent = 'Driving licence verified. Ready for final showroom appointment confirmation.';
+                    }
+                }
             } else if (vStatus === 'PENDING' && bStatus === 'PENDING') {
                 if (licenseActions) licenseActions.classList.remove('d-none');
             }
 
             // Document Image display
-            if (b.has_license_image && b.license_image_url) {
+            if (hasLicense && b.license_image_url) {
                 if (imgContainer) imgContainer.classList.remove('d-none');
                 if (noDocNotice) noDocNotice.classList.add('d-none');
                 if (previewImg) previewImg.src = b.license_image_url;
                 if (enlargedImg) enlargedImg.src = b.license_image_url;
             } else {
                 if (imgContainer) imgContainer.classList.add('d-none');
-                if (noDocNotice) noDocNotice.classList.remove('d-none');
+                if (noDocNotice) {
+                    noDocNotice.classList.remove('d-none');
+                    const noticeSpan = noDocNotice.querySelector('span:last-child');
+                    if (noticeSpan) noticeSpan.textContent = 'Licence Not Provided (Customer opted not to upload document).';
+                }
                 if (previewImg) previewImg.src = '';
                 if (enlargedImg) enlargedImg.src = '';
             }
