@@ -813,3 +813,143 @@ class RazorpayBackendTests(TestCase):
         self.assertContains(response, 'Currently Out of Stock')
         self.assertNotContains(response, 'id="btnBookCarNow"')
 
+    @patch('apps.payments.services.get_razorpay_client')
+    def test_successful_payment_decreases_stock_from_default_five(self, mock_get_client):
+        """Newly created car defaulting to stock 5 decreases to 4 on successful payment verification."""
+        mock_client = MagicMock()
+        mock_client.utility.verify_payment_signature.return_value = True
+        mock_client.payment.fetch.return_value = {
+            'id': 'pay_stock5_123',
+            'order_id': 'order_stock5_123',
+            'amount': 2500000,
+            'currency': 'INR',
+            'status': 'captured',
+            'method': 'card'
+        }
+        mock_get_client.return_value = mock_client
+
+        # Create car without explicit stock_quantity to test default 5
+        car = Car.objects.create(
+            title='Default Stock 5 Test Car',
+            slug='default-stock-5-test-car',
+            brand=self.brand,
+            body_type=Car.BodyType.SEDAN,
+            price=Decimal('1500000.00'),
+            booking_amount=Decimal('25000.00'),
+            engine_capacity='1500 cc',
+            mileage='18.0 kmpl',
+            color_options='Silver, Blue',
+        )
+        self.assertEqual(car.stock_quantity, 5)
+
+        booking = CarBooking.objects.create(customer=self.customer, car=car, booking_amount=Decimal('25000.00'))
+        Payment.objects.create(booking=booking, razorpay_order_id='order_stock5_123', amount=Decimal('25000.00'))
+
+        self.client.force_login(self.customer)
+        response = self.client.post(
+            self.verify_payment_url,
+            data={
+                'razorpay_order_id': 'order_stock5_123',
+                'razorpay_payment_id': 'pay_stock5_123',
+                'razorpay_signature': 'sig_stock5_valid'
+            },
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        car.refresh_from_db()
+        self.assertEqual(car.stock_quantity, 4)
+        self.assertTrue(car.is_available)
+
+    @patch('apps.payments.services.get_razorpay_client')
+    def test_failed_payments_do_not_decrease_stock(self, mock_get_client):
+        """Failed payment verification attempts (invalid signature or uncaptured) do not decrement stock."""
+        mock_client = MagicMock()
+        mock_client.utility.verify_payment_signature.side_effect = razorpay.errors.SignatureVerificationError("Signature mismatch")
+        mock_get_client.return_value = mock_client
+
+        car = Car.objects.create(
+            title='Failed Payment Car',
+            slug='failed-payment-car',
+            brand=self.brand,
+            price=Decimal('1200000.00'),
+            booking_amount=Decimal('20000.00'),
+            engine_capacity='1200 cc',
+            mileage='20.0 kmpl',
+            color_options='White',
+        )
+        self.assertEqual(car.stock_quantity, 5)
+
+        booking = CarBooking.objects.create(customer=self.customer, car=car, booking_amount=Decimal('20000.00'))
+        Payment.objects.create(booking=booking, razorpay_order_id='order_fail_stock', amount=Decimal('20000.00'))
+
+        self.client.force_login(self.customer)
+        response = self.client.post(
+            self.verify_payment_url,
+            data={
+                'razorpay_order_id': 'order_fail_stock',
+                'razorpay_payment_id': 'pay_fail_123',
+                'razorpay_signature': 'sig_fail'
+            },
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 400)
+        car.refresh_from_db()
+        self.assertEqual(car.stock_quantity, 5)
+
+    @patch('apps.payments.services.get_razorpay_client')
+    def test_repeated_payment_verification_does_not_decrease_stock_twice_from_five(self, mock_get_client):
+        """Repeated verification callbacks for an already confirmed order return already_processed without duplicate deduction."""
+        mock_client = MagicMock()
+        mock_client.utility.verify_payment_signature.return_value = True
+        mock_client.payment.fetch.return_value = {
+            'id': 'pay_repeat_123',
+            'order_id': 'order_repeat_123',
+            'amount': 2500000,
+            'currency': 'INR',
+            'status': 'captured',
+            'method': 'netbanking'
+        }
+        mock_get_client.return_value = mock_client
+
+        car = Car.objects.create(
+            title='Repeat Verification Car',
+            slug='repeat-verification-car',
+            brand=self.brand,
+            price=Decimal('1600000.00'),
+            booking_amount=Decimal('25000.00'),
+            engine_capacity='1500 cc',
+            mileage='17.5 kmpl',
+            color_options='Black',
+        )
+        self.assertEqual(car.stock_quantity, 5)
+
+        booking = CarBooking.objects.create(customer=self.customer, car=car, booking_amount=Decimal('25000.00'))
+        Payment.objects.create(booking=booking, razorpay_order_id='order_repeat_123', amount=Decimal('25000.00'))
+
+        self.client.force_login(self.customer)
+
+        # First verification
+        res1 = self.client.post(
+            self.verify_payment_url,
+            data={'razorpay_order_id': 'order_repeat_123', 'razorpay_payment_id': 'pay_repeat_123', 'razorpay_signature': 'sig_repeat'},
+            content_type='application/json'
+        )
+        self.assertEqual(res1.status_code, 200)
+        self.assertEqual(res1.json()['status'], 'success')
+        car.refresh_from_db()
+        self.assertEqual(car.stock_quantity, 4)
+
+        # Second verification (duplicate/retry)
+        res2 = self.client.post(
+            self.verify_payment_url,
+            data={'razorpay_order_id': 'order_repeat_123', 'razorpay_payment_id': 'pay_repeat_123', 'razorpay_signature': 'sig_repeat'},
+            content_type='application/json'
+        )
+        self.assertEqual(res2.status_code, 200)
+        self.assertEqual(res2.json()['status'], 'already_processed')
+        car.refresh_from_db()
+        self.assertEqual(car.stock_quantity, 4)  # No second deduction
+

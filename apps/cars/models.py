@@ -82,7 +82,7 @@ class Car(models.Model):
     seating_capacity = models.PositiveIntegerField(default=5, verbose_name="Seating Capacity")
     mileage = models.CharField(max_length=50, verbose_name="Mileage / Range")
     color_options = models.CharField(max_length=255, verbose_name="Available Colors")
-    stock_quantity = models.PositiveIntegerField(default=1, verbose_name="Stock Quantity")
+    stock_quantity = models.PositiveIntegerField(default=5, verbose_name="Stock Quantity")
     is_available = models.BooleanField(default=True, verbose_name="Available for Booking")
     is_featured = models.BooleanField(default=False, verbose_name="Featured on Homepage")
     description = models.TextField(blank=True, verbose_name="Description")

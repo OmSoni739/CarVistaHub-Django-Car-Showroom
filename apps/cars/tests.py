@@ -683,3 +683,67 @@ class CompareCarsFeatureTests(TestCase):
         self.assertContains(res_detail, f'href="{compare_url}?car={self.car_creta.slug}"')
 
 
+class CarStockInventoryTests(TestCase):
+    """
+    Tests verifying default inventory stock quantity, fixture integrity, and data migration.
+    """
+    def test_newly_created_cars_default_to_stock_five(self):
+        """Newly created cars without an explicit stock_quantity receive default 5 units."""
+        brand = Brand.objects.create(name='Test Default Brand', slug='test-default-brand')
+        car = Car.objects.create(
+            title='Test Default Stock Car',
+            brand=brand,
+            price=Decimal('1500000.00'),
+            booking_amount=Decimal('25000.00'),
+            engine_capacity='1500 cc',
+            mileage='18.0 kmpl',
+            color_options='White, Silver',
+        )
+        self.assertEqual(car.stock_quantity, 5)
+        # Also verify model field declaration default
+        field = Car._meta.get_field('stock_quantity')
+        self.assertEqual(field.default, 5)
+
+    def test_all_32_fixture_cars_have_stock_quantity_five(self):
+        """All 32 cars defined in fixtures/cars_catalog.json have stock_quantity equal to 5."""
+        import json
+        import os
+        from django.conf import settings
+
+        fixture_path = os.path.join(settings.BASE_DIR, 'fixtures', 'cars_catalog.json')
+        with open(fixture_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        car_records = [item for item in data if item.get('model') == 'cars.car']
+        self.assertEqual(len(car_records), 32)
+        for car in car_records:
+            stock = car['fields'].get('stock_quantity')
+            self.assertEqual(stock, 5, f"Car {car['pk']} '{car['fields'].get('title')}' has stock {stock}, expected 5.")
+
+    def test_data_migration_updates_existing_cars_to_stock_five(self):
+        """Data migration logic updates all existing cars (with heterogeneous stock levels) to 5 units."""
+        from django.apps import apps as global_apps
+        import importlib
+        migration_module = importlib.import_module('apps.cars.migrations.0006_update_existing_cars_stock_to_five')
+        update_existing_cars_stock_to_five = migration_module.update_existing_cars_stock_to_five
+
+        brand = Brand.objects.create(name='Migration Test Brand', slug='migration-test-brand')
+        c1 = Car.objects.create(title='Old Stock 1', brand=brand, price=Decimal('1000000'), booking_amount=Decimal('20000'), engine_capacity='1.2L', mileage='20kmpl', color_options='Red', stock_quantity=1)
+        c2 = Car.objects.create(title='Old Stock 2', brand=brand, price=Decimal('1200000'), booking_amount=Decimal('22000'), engine_capacity='1.5L', mileage='18kmpl', color_options='Blue', stock_quantity=2)
+        c3 = Car.objects.create(title='Old Stock 8', brand=brand, price=Decimal('2500000'), booking_amount=Decimal('30000'), engine_capacity='2.0L', mileage='16kmpl', color_options='Black', stock_quantity=8)
+        c4 = Car.objects.create(title='Old Stock 0 Depleted', brand=brand, price=Decimal('3000000'), booking_amount=Decimal('50000'), engine_capacity='2.2L', mileage='14kmpl', color_options='Grey', stock_quantity=0, is_available=False)
+
+        # Run the migration function
+        update_existing_cars_stock_to_five(global_apps, None)
+
+        c1.refresh_from_db()
+        c2.refresh_from_db()
+        c3.refresh_from_db()
+        c4.refresh_from_db()
+
+        self.assertEqual(c1.stock_quantity, 5)
+        self.assertEqual(c2.stock_quantity, 5)
+        self.assertEqual(c3.stock_quantity, 5)
+        self.assertEqual(c4.stock_quantity, 5)
+        self.assertTrue(c4.is_available)
+
